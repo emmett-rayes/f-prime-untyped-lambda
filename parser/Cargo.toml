@@ -1,8 +1,5 @@
-[workspace]
-members = ["parser"]
-
 [package]
-name = "f_prime"
+name = "f_prime_parser"
 version = "0.1.0"
 edition = "2021"
 authors = ["Emmett Rayes <emmett.rayes@icloud.com>"]
