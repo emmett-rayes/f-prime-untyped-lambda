@@ -63,17 +63,50 @@ impl ParserError {
 
 pub type ParserResult<'a, Output> = Result<(ParserInput<'a>, Output), ParserError>;
 
+pub struct BoxedParser<'a, Output> {
+    parser: Box<dyn Parser<'a, Output> + 'a>,
+}
+
+impl<'a, Output> BoxedParser<'a, Output> {
+    fn new<P>(parser: P) -> Self
+    where
+        P: Parser<'a, Output> + 'a,
+    {
+        BoxedParser {
+            parser: Box::new(parser),
+        }
+    }
+}
+
 pub trait Parser<'a, Output> {
     fn parse(&self, input: ParserInput<'a>) -> ParserResult<'a, Output>;
 
-    fn map<F, MapOutput>(&self, op: F) -> impl Parser<'a, MapOutput>
+    fn map<F, MapOutput>(self, op: F) -> BoxedParser<'a, MapOutput>
     where
-        F: Fn(Output) -> MapOutput,
+        Self: Sized + 'a,
+        F: Fn(Output) -> MapOutput + 'a,
     {
-        move |input| {
+        BoxedParser::new(move |input| {
             self.parse(input)
-                .map(|(remaining, result)| (remaining, op(result)))
-        }
+                .map(|(remaining, output)| (remaining, op(output)))
+        })
+    }
+
+    fn and_then<F, ThenOutput>(self, op: F) -> BoxedParser<'a, ThenOutput>
+    where
+        Self: Sized + 'a,
+        F: Fn((ParserInput<'a>, Output)) -> ParserResult<'a, ThenOutput> + 'a,
+    {
+        BoxedParser::new(move |input| {
+            self.parse(input)
+                .and_then(|parser_result| op(parser_result))
+        })
+    }
+}
+
+impl<'a, Output> Parser<'a, Output> for BoxedParser<'a, Output> {
+    fn parse(&self, input: ParserInput<'a>) -> ParserResult<'a, Output> {
+        self.parser.parse(input)
     }
 }
 
@@ -86,8 +119,8 @@ where
     }
 }
 
-pub fn literal<'a>(expected: &'static str) -> impl Parser<'a, String> {
-    move |input: ParserInput<'a>| {
+pub fn literal<'a>(expected: &'static str) -> BoxedParser<'a, String> {
+    BoxedParser::new(move |input: ParserInput<'a>| {
         if input.string.starts_with(expected) {
             Ok((input.seek(expected.len()), expected.to_string()))
         } else {
@@ -96,7 +129,33 @@ pub fn literal<'a>(expected: &'static str) -> impl Parser<'a, String> {
                 input.position,
             ))
         }
-    }
+    })
+}
+
+fn symbol<'a>() -> BoxedParser<'a, String> {
+    BoxedParser::new(move |input: ParserInput<'a>| {
+        let mut matched = String::new();
+        for c in input.string.chars() {
+            if c == ' ' || c == '\\' || c == '.' {
+                break;
+            } else {
+                matched.push(c);
+            }
+        }
+
+        match matched.chars().next() {
+            None => Err(ParserError::new_at(
+                "Failed to match constant.".to_string(),
+                input.position,
+            )),
+            Some(c) if c.is_lowercase() => Err(ParserError::new_range(
+                "Constants must start with either a symbol or an upper case letter.".to_string(),
+                input.position,
+                input.position + matched.len() - 1,
+            )),
+            Some(_) => Ok((input.seek(matched.len()), matched)),
+        }
+    })
 }
 
 #[cfg(test)]
@@ -116,5 +175,33 @@ mod tests {
 
         let input = ParserInput::new("goodbye, world!");
         assert_matches!(literal_parser.parse(input), Err(_),);
+    }
+
+    #[test]
+    fn test_constant() {
+        use std::assert_matches::assert_matches;
+
+        let constant_parser = constant();
+
+        let input = ParserInput::new("Type ...");
+        assert_matches!(
+            constant_parser.parse(input),
+            Ok((_, string)) if string == "Type",
+        );
+
+        let input = ParserInput::new("-> ...");
+        assert_matches!(
+            constant_parser.parse(input),
+            Ok((_, string)) if string == "->",
+        );
+
+        let input = ParserInput::new("\\X");
+        assert_matches!(constant_parser.parse(input), Err(_),);
+
+        let input = ParserInput::new("symbol ...");
+        assert_matches!(
+            constant_parser.parse(input),
+            Err(error) if error.start_position == Some(0) && error.end_position == Some("symbol".len() - 1),
+        );
     }
 }
