@@ -5,6 +5,9 @@ version = 3
 [[package]]
 name = "f_prime"
 version = "0.1.0"
+dependencies = [
+ "f_prime_parser",
+]
 
 [[package]]
 name = "f_prime_parser"

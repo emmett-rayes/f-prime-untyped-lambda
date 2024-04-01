@@ -9,3 +9,4 @@ authors = ["Emmett Rayes <emmett.rayes@icloud.com>"]
 repository = "https://github.com/emmett-rayes/f-prime"
 
 [dependencies]
+f_prime_parser = {path = "parser"}
