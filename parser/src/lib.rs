@@ -29,7 +29,10 @@ impl<'a> ParserInput<'a> {
     }
 }
 
-pub trait Parser<Input> {
+pub trait Parser<Input>
+where
+    Input: Clone,
+{
     type Output;
 
     fn parse(&self, input: Input) -> ParserResult<Input, Self::Output>;
@@ -44,10 +47,24 @@ pub trait Parser<Input> {
                 .map(|(output, remaining)| (op(output), remaining))
         })
     }
+
+    fn or_else<'a>(
+        self,
+        other: impl Parser<Input, Output = Self::Output> + 'a,
+    ) -> BoxedParser<'a, Input, Self::Output>
+    where
+        Self: Sized + 'a,
+    {
+        BoxedParser::new(move |input: Input| {
+            let input_clone = input.clone();
+            self.parse(input).or_else(|_| other.parse(input_clone))
+        })
+    }
 }
 
 impl<F, Input, Output> Parser<Input> for F
 where
+    Input: Clone,
     F: Fn(Input) -> ParserResult<Input, Output>,
 {
     type Output = Output;
@@ -61,7 +78,10 @@ pub struct BoxedParser<'a, Input, Output> {
     parser: Box<dyn Parser<Input, Output = Output> + 'a>,
 }
 
-impl<'a, Input, Output> Parser<Input> for BoxedParser<'a, Input, Output> {
+impl<'a, Input, Output> Parser<Input> for BoxedParser<'a, Input, Output>
+where
+    Input: Clone,
+{
     type Output = Output;
 
     fn parse(&self, input: Input) -> ParserResult<Input, Output> {
@@ -72,6 +92,7 @@ impl<'a, Input, Output> Parser<Input> for BoxedParser<'a, Input, Output> {
 impl<'a, Input, Output> BoxedParser<'a, Input, Output> {
     pub fn new<P>(parser: P) -> Self
     where
+        Input: Clone,
         P: Parser<Input, Output = Output> + 'a,
     {
         BoxedParser {

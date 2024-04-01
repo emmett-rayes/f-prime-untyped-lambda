@@ -1,5 +1,7 @@
 use f_prime_parser::{BoxedParser, Parser, ParserInput, ParserResult};
 
+mod constant;
+
 mod variable;
 
 type ExpressionParser<'a, Exp> = BoxedParser<'a, ParserInput<'a>, Exp>;
