@@ -85,3 +85,36 @@ where
         self(input)
     }
 }
+
+pub fn literal<'a>(expected: &'static str) -> impl Parser<'a, String> {
+    move |input: ParserInput<'a>| {
+        if input.string.starts_with(expected) {
+            Ok((input.seek(expected.len()), expected.to_string()))
+        } else {
+            Err(ParserError::new_at(
+                format!("Failed to match literal {expected}."),
+                input.position,
+            ))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::assert_matches::assert_matches;
+
+    #[test]
+    fn test_literal() {
+        let literal_parser = literal("hello");
+
+        let input = ParserInput::new("hello, world!");
+        assert_matches!(
+            literal_parser.parse(input),
+            Ok((remaining, string)) if string == "hello" && remaining.string == ", world!",
+        );
+
+        let input = ParserInput::new("goodbye, world!");
+        assert_matches!(literal_parser.parse(input), Err(_),);
+    }
+}
