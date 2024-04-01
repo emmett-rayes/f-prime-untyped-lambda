@@ -142,19 +142,22 @@ fn symbol<'a>() -> BoxedParser<'a, String> {
                 matched.push(c);
             }
         }
+        Ok((input.seek(matched.len()), matched))
+    })
+}
 
-        match matched.chars().next() {
-            None => Err(ParserError::new_at(
-                "Failed to match constant.".to_string(),
-                input.position,
-            )),
-            Some(c) if c.is_lowercase() => Err(ParserError::new_range(
-                "Constants must start with either a symbol or an upper case letter.".to_string(),
-                input.position,
-                input.position + matched.len() - 1,
-            )),
-            Some(_) => Ok((input.seek(matched.len()), matched)),
-        }
+fn constant<'a>() -> BoxedParser<'a, String> {
+    symbol().and_then(|(remaining, output)| match output.chars().next() {
+        None => Err(ParserError::new_at(
+            "Failed to match constant.".to_string(),
+            remaining.position - output.len(),
+        )),
+        Some(c) if c.is_lowercase() => Err(ParserError::new_range(
+            "Constants must start with either a symbol or an upper case letter.".to_string(),
+            remaining.position - output.len(),
+            output.len() - 1,
+        )),
+        Some(_) => Ok((remaining, output)),
     })
 }
 
