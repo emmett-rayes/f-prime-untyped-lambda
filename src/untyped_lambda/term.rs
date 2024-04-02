@@ -51,13 +51,17 @@ pub struct UntypedAbstraction {
 
 impl Expression for UntypedAbstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = literal("@")
-            .then(Variable::parser())
-            .right()
-            .then(literal("."))
-            .left()
-            .then(UntypedTerm::parser())
-            .map(|(parameter, body)| UntypedAbstraction { parameter, body });
+        let parser = between(
+            literal("("),
+            literal("@")
+                .then(Variable::parser())
+                .right()
+                .then(literal("."))
+                .left()
+                .then(UntypedTerm::parser()),
+            literal(")"),
+        )
+        .map(|(parameter, body)| UntypedAbstraction { parameter, body });
         parser.parse(input)
     }
 }
@@ -90,9 +94,9 @@ mod tests {
 
     #[test]
     fn test_application() {
-        let input = PositionedBuffer::new("(@x.x @y.y)");
-        let (output, remaining) = UntypedTerm::parse(input).unwrap();
-        dbg!(output);
-        assert!(remaining.buffer.is_empty())
+        let input = PositionedBuffer::new("(x (y z))");
+        let result = UntypedTerm::parse(input);
+        dbg!(&result);
+        assert!(result.unwrap().1.buffer.is_empty())
     }
 }
