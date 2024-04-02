@@ -7,16 +7,11 @@ pub trait Expression
 where
     Self: Sized,
 {
-    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self>
-    where
-        Self: Sized,
-    {
-        Self::parser().parse(input)
-    }
+    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self>;
 
-    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-    where
-        Self: Sized;
+    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
+        move |input: PositionedBuffer<'a>| Self::parse(input)
+    }
 }
 
 fn symbol<'a>() -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {

@@ -1,6 +1,6 @@
 use crate::expression::{literal, Expression};
 use f_prime_parser::combinators::one_of;
-use f_prime_parser::{Parser, PositionedBuffer};
+use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 use std::marker::PhantomData;
 
 #[derive(Debug)]
@@ -20,20 +20,18 @@ impl<CONSTANTS: DefinedConstants> Expression for Constant<CONSTANTS>
 where
     Self: Sized,
 {
-    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
-        move |input: PositionedBuffer<'a>| {
-            one_of(
-                CONSTANTS::CHOICES
-                    .iter()
-                    .map(|constant| literal(constant).boxed())
-                    .collect(),
-            )
-            .map(|symbol| Constant {
-                symbol,
-                constants: PhantomData,
-            })
-            .parse(input)
-        }
+    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
+        let parser = one_of(
+            CONSTANTS::CHOICES
+                .iter()
+                .map(|constant| literal(constant).boxed())
+                .collect(),
+        )
+        .map(|symbol| Constant {
+            symbol,
+            constants: PhantomData,
+        });
+        parser.parse(input)
     }
 }
 
