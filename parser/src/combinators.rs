@@ -21,5 +21,4 @@ where
         .map(|p| p.boxed())
         .reduce(|p1, p2| or_else(p1, p2).boxed())
         .expect("Parser list must not be empty")
-        .boxed()
 }

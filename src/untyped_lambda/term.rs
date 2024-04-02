@@ -39,8 +39,7 @@ impl Expression for UntypedAbstraction {
             .then(Variable::parser())
             .right()
             .then(UntypedTerm::parser())
-            .map(|(parameter, body)| UntypedAbstraction { parameter, body })
-            .boxed();
+            .map(|(parameter, body)| UntypedAbstraction { parameter, body });
         parser.parse(input)
     }
 }
@@ -53,13 +52,13 @@ pub struct UntypedApplication {
 
 impl Expression for UntypedApplication {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = UntypedTerm::parser()
-            .then(UntypedTerm::parser())
-            .map(|(applicand, argument)| UntypedApplication {
-                applicand,
-                argument,
-            })
-            .boxed();
+        let parser =
+            UntypedTerm::parser()
+                .then(UntypedTerm::parser())
+                .map(|(applicand, argument)| UntypedApplication {
+                    applicand,
+                    argument,
+                });
         parser.parse(input)
     }
 }
@@ -71,7 +70,7 @@ mod tests {
 
     #[test]
     fn test_application() {
-        let input = PositionedBuffer::new("x y");
-        dbg!(UntypedTerm::parse(input));
+        let input = PositionedBuffer::new(" ");
+        dbg!(UntypedApplication::parse(input));
     }
 }
