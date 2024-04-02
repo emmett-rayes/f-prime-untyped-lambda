@@ -1,4 +1,4 @@
-use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
+use f_prime_parser::{Parser, ParserInput, ParserResult, PositionedBuffer};
 
 pub mod constant;
 pub mod variable;
@@ -17,10 +17,6 @@ where
     fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
     where
         Self: Sized;
-}
-
-struct Symbol {
-    symbol: String,
 }
 
 fn symbol<'a>() -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {

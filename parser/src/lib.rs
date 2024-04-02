@@ -1,7 +1,17 @@
 use std::ops::{Deref, Range};
 
-pub type ParserResult<I, O> = Result<(O, I), (String, I, Range<usize>)>;
+pub mod combinators;
+
+pub type ParserError<I> = (String, I, Range<usize>);
+pub type ParserResult<I, O> = Result<(O, I), ParserError<I>>;
 pub type BoxedParser<'a, I, O> = Box<dyn Parser<I, Output = O> + 'a>;
+
+pub trait ParserInput
+where
+    Self: Sized,
+{
+    fn error(self, message: String) -> ParserError<Self>;
+}
 
 #[derive(Clone, Debug)]
 pub struct PositionedBuffer<'a> {
@@ -23,14 +33,19 @@ impl<'a> PositionedBuffer<'a> {
             position: self.position + length,
         }
     }
+}
 
-    pub fn error(self, message: String) -> (String, Self, Range<usize>) {
+impl<'a> ParserInput for PositionedBuffer<'a> {
+    fn error(self, message: String) -> ParserError<Self> {
         let range = self.position..self.position;
         (message, self, range)
     }
 }
 
-pub trait Parser<I> {
+pub trait Parser<I>
+where
+    I: ParserInput,
+{
     type Output;
 
     fn parse(&self, input: I) -> ParserResult<I, Self::Output>;
@@ -68,7 +83,10 @@ pub trait Parser<I> {
     }
 }
 
-impl<'a, I, O> Parser<I> for BoxedParser<'a, I, O> {
+impl<'a, I, O> Parser<I> for BoxedParser<'a, I, O>
+where
+    I: ParserInput,
+{
     type Output = O;
 
     fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
@@ -78,6 +96,7 @@ impl<'a, I, O> Parser<I> for BoxedParser<'a, I, O> {
 
 impl<F, I, O> Parser<I> for F
 where
+    I: ParserInput,
     F: Fn(I) -> ParserResult<I, O>,
 {
     type Output = O;
@@ -95,6 +114,7 @@ pub struct MapParser<P, F> {
 impl<P, F> MapParser<P, F> {
     fn new<I, A, B>(parser: P, f: F) -> MapParser<P, F>
     where
+        I: ParserInput,
         P: Parser<I, Output = A>,
         F: Fn(A) -> B,
     {
@@ -107,6 +127,7 @@ impl<P, F> MapParser<P, F> {
 
 impl<I, A, B, P, F> Parser<I> for MapParser<P, F>
 where
+    I: ParserInput,
     P: Parser<I, Output = A>,
     F: Fn(A) -> B,
 {
@@ -127,6 +148,7 @@ pub struct ThenParser<P1, P2> {
 impl<P1, P2> ThenParser<P1, P2> {
     fn new<I, A1, A2>(first: P1, second: P2) -> ThenParser<P1, P2>
     where
+        I: ParserInput,
         P1: Parser<I, Output = A1>,
         P2: Parser<I, Output = A2>,
     {
@@ -139,6 +161,7 @@ impl<P1, P2> ThenParser<P1, P2> {
 
 impl<I, A1, A2, P1, P2> Parser<I> for ThenParser<P1, P2>
 where
+    I: ParserInput,
     P1: Parser<I, Output = A1>,
     P2: Parser<I, Output = A2>,
 {
@@ -163,6 +186,7 @@ pub struct OrElseParser<P1, P2> {
 impl<P1, P2> OrElseParser<P1, P2> {
     fn new<I, A>(first: P1, second: P2) -> OrElseParser<P1, P2>
     where
+        I: ParserInput,
         P1: Parser<I, Output = A>,
         P2: Parser<I, Output = A>,
     {
@@ -175,7 +199,7 @@ impl<P1, P2> OrElseParser<P1, P2> {
 
 impl<I, A, P1, P2> Parser<I> for OrElseParser<P1, P2>
 where
-    I: Clone,
+    I: ParserInput + Clone,
     P1: Parser<I, Output = A>,
     P2: Parser<I, Output = A>,
 {
