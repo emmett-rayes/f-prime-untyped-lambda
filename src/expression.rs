@@ -23,12 +23,12 @@ fn parse_symbol(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Strin
     let mut chars = input.buffer.chars();
 
     match chars.next() {
-        Some(c) if c.is_alphabetic() => matched.push(c),
+        Some(c) if c.is_ascii_alphabetic() => matched.push(c),
         _ => return Err(input.error("Invalid symbol.".to_string())),
     }
 
     for c in chars {
-        if c.is_alphanumeric() || c == '-' || c == '_' {
+        if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
             matched.push(c);
         } else {
             break;
