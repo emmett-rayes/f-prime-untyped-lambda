@@ -3,7 +3,7 @@ use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 
 #[derive(Debug)]
 pub struct Variable {
-    symbol: String,
+    pub symbol: String,
 }
 
 impl Expression for Variable {

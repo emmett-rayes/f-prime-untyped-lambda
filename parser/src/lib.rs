@@ -33,6 +33,17 @@ impl<'a> PositionedBuffer<'a> {
             position: self.position + length,
         }
     }
+
+    pub fn seek_whitespace(self) -> Self {
+        let mut ws = 0;
+        for c in self.buffer.chars() {
+            if !c.is_whitespace() {
+                break;
+            }
+            ws += 1;
+        }
+        self.seek(ws)
+    }
 }
 
 impl<'a> ParserInput for PositionedBuffer<'a> {

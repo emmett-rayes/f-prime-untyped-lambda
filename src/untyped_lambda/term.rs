@@ -1,4 +1,3 @@
-use f_prime_parser::combinators::one_of;
 use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 
 use crate::expression::variable::Variable;
@@ -11,18 +10,34 @@ pub enum UntypedTerm {
     Application(Box<UntypedApplication>),
 }
 
+impl UntypedTerm {
+    fn variable_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
+    where
+        Self: Expression,
+    {
+        Variable::parser().map(UntypedTerm::Variable)
+    }
+
+    fn abstraction_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
+    where
+        Self: Expression,
+    {
+        UntypedAbstraction::parser().map(|out| UntypedTerm::Abstraction(Box::new(out)))
+    }
+
+    fn application_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
+    where
+        Self: Expression,
+    {
+        UntypedApplication::parser().map(|out| UntypedTerm::Application(Box::new(out)))
+    }
+}
+
 impl Expression for UntypedTerm {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let sub_parsers = vec![
-            Variable::parser().map(UntypedTerm::Variable).boxed(),
-            UntypedAbstraction::parser()
-                .map(|out| UntypedTerm::Abstraction(Box::new(out)))
-                .boxed(),
-            UntypedApplication::parser()
-                .map(|out| UntypedTerm::Application(Box::new(out)))
-                .boxed(),
-        ];
-        let parser = one_of(sub_parsers);
+        let parser = UntypedTerm::variable_parser()
+            .or_else(UntypedTerm::abstraction_parser())
+            .or_else(UntypedTerm::application_parser());
         parser.parse(input)
     }
 }
@@ -35,9 +50,11 @@ pub struct UntypedAbstraction {
 
 impl Expression for UntypedAbstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = literal("\\")
+        let parser = literal("@")
             .then(Variable::parser())
             .right()
+            .then(literal("."))
+            .left()
             .then(UntypedTerm::parser())
             .map(|(parameter, body)| UntypedAbstraction { parameter, body });
         parser.parse(input)
@@ -52,13 +69,16 @@ pub struct UntypedApplication {
 
 impl Expression for UntypedApplication {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser =
-            UntypedTerm::parser()
-                .then(UntypedTerm::parser())
-                .map(|(applicand, argument)| UntypedApplication {
-                    applicand,
-                    argument,
-                });
+        let parser = literal("(")
+            .then(UntypedTerm::parser())
+            .right()
+            .then(UntypedTerm::parser())
+            .then(literal(")"))
+            .left()
+            .map(|(applicand, argument)| UntypedApplication {
+                applicand,
+                argument,
+            });
         parser.parse(input)
     }
 }
@@ -70,7 +90,9 @@ mod tests {
 
     #[test]
     fn test_application() {
-        let input = PositionedBuffer::new(" ");
-        dbg!(UntypedApplication::parse(input));
+        let input = PositionedBuffer::new("(@x.x @y.y)");
+        let (output, remaining) = UntypedTerm::parse(input).unwrap();
+        dbg!(output);
+        assert!(remaining.buffer.is_empty())
     }
 }
