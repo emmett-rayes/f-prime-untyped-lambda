@@ -1,14 +1,23 @@
 use crate::expression::{symbol, Expression};
 use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 
+pub type VariableIndex = u64;
+
 #[derive(Debug)]
 pub struct Variable {
-    pub symbol: String,
+    symbol: String,
+    index: VariableIndex,
+}
+
+impl Variable {
+    fn new(symbol: String, index: VariableIndex) -> Self {
+        Variable { symbol, index }
+    }
 }
 
 impl Expression for Variable {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = symbol().map(|output| Variable { symbol: output });
+        let parser = symbol().map(|output| Variable::new(output, 0));
         parser.parse(input)
     }
 }
