@@ -13,8 +13,7 @@ where
     where
         Self: 'a,
     {
-        // Self::parse
-        move |input: PositionedBuffer<'a>| Self::parse(input)
+        Self::parse
     }
 }
 
