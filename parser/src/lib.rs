@@ -57,18 +57,18 @@ where
         Box::new(self)
     }
 
-    fn map<F, B>(self, f: F) -> MapParser<Self, F>
+    fn map<F, A>(self, f: F) -> MapParser<Self, F>
     where
         Self: Sized,
-        F: Fn(Self::Output) -> B,
+        F: Fn(Self::Output) -> A,
     {
         MapParser::new(self, f)
     }
 
-    fn then<A, P>(self, parser: P) -> ThenParser<Self, P>
+    fn then<O, P>(self, parser: P) -> ThenParser<Self, P>
     where
         Self: Sized,
-        P: Parser<I, Output = A>,
+        P: Parser<I, Output = O>,
     {
         ThenParser::new(self, parser)
     }
@@ -146,26 +146,42 @@ pub struct ThenParser<P1, P2> {
 }
 
 impl<P1, P2> ThenParser<P1, P2> {
-    fn new<I, A1, A2>(first: P1, second: P2) -> ThenParser<P1, P2>
+    fn new<I, O1, O2>(first: P1, second: P2) -> ThenParser<P1, P2>
     where
         I: ParserInput,
-        P1: Parser<I, Output = A1>,
-        P2: Parser<I, Output = A2>,
+        P1: Parser<I, Output = O1>,
+        P2: Parser<I, Output = O2>,
     {
         ThenParser {
             first_parser: first,
             second_parser: second,
         }
     }
+
+    pub fn left<I, O1, O2>(self) -> impl Parser<I, Output = O1>
+    where
+        I: ParserInput,
+        Self: Parser<I, Output = (O1, O2)>,
+    {
+        self.map(|(a1, _)| a1)
+    }
+
+    pub fn right<I, O1, O2>(self) -> impl Parser<I, Output = O2>
+    where
+        I: ParserInput,
+        Self: Parser<I, Output = (O1, O2)>,
+    {
+        self.map(|(_, a2)| a2)
+    }
 }
 
-impl<I, A1, A2, P1, P2> Parser<I> for ThenParser<P1, P2>
+impl<I, O1, O2, P1, P2> Parser<I> for ThenParser<P1, P2>
 where
     I: ParserInput,
-    P1: Parser<I, Output = A1>,
-    P2: Parser<I, Output = A2>,
+    P1: Parser<I, Output = O1>,
+    P2: Parser<I, Output = O2>,
 {
-    type Output = (A1, A2);
+    type Output = (O1, O2);
 
     fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
         self.first_parser
@@ -184,11 +200,11 @@ pub struct OrElseParser<P1, P2> {
 }
 
 impl<P1, P2> OrElseParser<P1, P2> {
-    fn new<I, A>(first: P1, second: P2) -> OrElseParser<P1, P2>
+    fn new<I, O>(first: P1, second: P2) -> OrElseParser<P1, P2>
     where
         I: ParserInput,
-        P1: Parser<I, Output = A>,
-        P2: Parser<I, Output = A>,
+        P1: Parser<I, Output = O>,
+        P2: Parser<I, Output = O>,
     {
         OrElseParser {
             first_parser: first,
@@ -197,13 +213,13 @@ impl<P1, P2> OrElseParser<P1, P2> {
     }
 }
 
-impl<I, A, P1, P2> Parser<I> for OrElseParser<P1, P2>
+impl<I, O, P1, P2> Parser<I> for OrElseParser<P1, P2>
 where
     I: ParserInput + Clone,
-    P1: Parser<I, Output = A>,
-    P2: Parser<I, Output = A>,
+    P1: Parser<I, Output = O>,
+    P2: Parser<I, Output = O>,
 {
-    type Output = A;
+    type Output = O;
 
     fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
         let input_clone = input.clone();
