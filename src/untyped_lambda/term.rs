@@ -1,8 +1,7 @@
-use f_prime_parser::combinators::between;
-use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
-
 use crate::expression::variable::Variable;
 use crate::expression::{literal, Expression};
+use f_prime_parser::combinators::between;
+use f_prime_parser::{Parser, ParserResult, PositionedBuffer, ThenParserExtensions};
 
 #[derive(Debug)]
 pub enum UntypedTerm {
@@ -36,6 +35,7 @@ impl Expression for UntypedTerm {
         let parser = UntypedTerm::abstraction_parser()
             .or_else(UntypedTerm::application_parser())
             .or_else(UntypedTerm::atom_parser());
+
         parser.parse(input)
     }
 }
@@ -50,12 +50,11 @@ impl Expression for UntypedAbstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = literal("@")
             .or_else(literal("λ"))
-            .then(Variable::parser())
-            .right()
-            .then(literal("."))
-            .left()
+            .skip_then(Variable::parser())
+            .then_skip(literal("."))
             .then(UntypedTerm::parser())
             .map(|(parameter, body)| UntypedAbstraction { parameter, body });
+
         parser.parse(input)
     }
 }
@@ -86,6 +85,7 @@ impl Expression for UntypedApplication {
                 })
                 .unwrap_or_else(|| unreachable!())
         });
+
         parser.parse(input)
     }
 }

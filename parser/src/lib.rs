@@ -219,6 +219,30 @@ where
     }
 }
 
+pub trait ThenParserExtensions<I, O1, O2, P>
+where
+    I: ParserInput,
+{
+    fn skip_then(self, parser: P) -> impl Parser<I, Output = O2>;
+
+    fn then_skip(self, parser: P) -> impl Parser<I, Output = O1>;
+}
+
+impl<I, O1, O2, P1, P2> ThenParserExtensions<I, O1, O2, P2> for P1
+where
+    I: ParserInput,
+    P1: Parser<I, Output = O1>,
+    P2: Parser<I, Output = O2>,
+{
+    fn skip_then(self, parser: P2) -> impl Parser<I, Output = O2> {
+        self.then(parser).right()
+    }
+
+    fn then_skip(self, parser: P2) -> impl Parser<I, Output = O1> {
+        self.then(parser).left()
+    }
+}
+
 pub struct OrElseParser<P1, P2> {
     first_parser: P1,
     second_parser: P2,
