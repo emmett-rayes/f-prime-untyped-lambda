@@ -1,7 +1,9 @@
-use f_prime_parser::{Parser, ParserInput, ParserResult, PositionedBuffer};
+use f_prime_parser::{BoxedParser, Parser, ParserInput, ParserResult, PositionedBuffer};
 
 pub mod constant;
 pub mod variable;
+
+pub type ExpressionParser<'a, Exp> = BoxedParser<'a, PositionedBuffer<'a>, Exp>;
 
 pub trait Expression
 where
@@ -14,13 +16,11 @@ where
         Self::parser().parse(input)
     }
 
-    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-    where
-        Self: Sized;
+    fn parser<'a>() -> ExpressionParser<'a, Self>;
 }
 
-fn symbol<'a>() -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {
-    move |input: PositionedBuffer<'a>| {
+fn symbol<'a>() -> ExpressionParser<'a, String> {
+    let parser = move |input: PositionedBuffer<'a>| {
         let mut matched = String::new();
         let mut chars = input.buffer.chars();
 
@@ -39,19 +39,19 @@ fn symbol<'a>() -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {
 
         let matched_len = matched.len();
         Ok((matched, input.seek(matched_len)))
-    }
+    };
+    parser.boxed()
 }
 
-pub fn literal<'a>(
-    expected: &'static str,
-) -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {
-    move |input: PositionedBuffer<'a>| {
+pub fn literal<'a>(expected: &'static str) -> ExpressionParser<'a, String> {
+    let parser = move |input: PositionedBuffer<'a>| {
         if input.buffer.starts_with(expected) {
             Ok((expected.to_string(), input.seek(expected.len())))
         } else {
             Err(input.error(format!("Failed to match literal {expected}.")))
         }
-    }
+    };
+    parser.boxed()
 }
 
 #[cfg(test)]

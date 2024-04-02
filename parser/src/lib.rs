@@ -92,6 +92,13 @@ where
     fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
         self.deref().parse(input)
     }
+
+    fn boxed<'b>(self) -> BoxedParser<'a, I, Self::Output>
+    where
+        Self: Sized + 'b,
+    {
+        self
+    }
 }
 
 impl<F, I, O> Parser<I> for F
