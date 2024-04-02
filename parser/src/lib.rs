@@ -92,6 +92,13 @@ where
     {
         OrElseParser::new(self, parser)
     }
+    fn at_least(self, minimum: u64) -> AtLeastParser<Self>
+    where
+        Self: Sized,
+        I: Clone,
+    {
+        AtLeastParser::new(minimum, self)
+    }
 }
 
 impl<'a, I, O> Parser<I> for BoxedParser<'a, I, O>
@@ -244,5 +251,42 @@ where
         self.first_parser
             .parse(input)
             .or_else(|_| self.second_parser.parse(input_clone))
+    }
+}
+
+pub struct AtLeastParser<P> {
+    min: u64,
+    parser: P,
+}
+
+impl<P> AtLeastParser<P> {
+    fn new<I, O>(min: u64, parser: P) -> AtLeastParser<P>
+    where
+        I: ParserInput,
+        P: Parser<I, Output = O>,
+    {
+        AtLeastParser { min, parser }
+    }
+}
+
+impl<I, O, P> Parser<I> for AtLeastParser<P>
+where
+    I: ParserInput + Clone,
+    P: Parser<I, Output = O>,
+{
+    type Output = Vec<O>;
+
+    fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
+        let mut total_output = Vec::new();
+        let mut remaining_input = input;
+        while let Ok((output, remaining)) = self.parser.parse(remaining_input.clone()) {
+            total_output.push(output);
+            remaining_input = remaining
+        }
+        if (total_output.len() as u64) < self.min {
+            Err(remaining_input.error("Unexpected input at this position.".to_string()))
+        } else {
+            Ok((total_output, remaining_input))
+        }
     }
 }
