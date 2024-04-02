@@ -38,6 +38,7 @@ impl UntypedTerm {
         Self: Expression,
     {
         between(literal("("), UntypedTerm::parser(), literal(")"))
+            .or_else(UntypedTerm::abstraction_parser())
             .or_else(UntypedTerm::variable_parser())
     }
 }
@@ -108,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_application() {
-        let input = PositionedBuffer::new("a (λt. b x t (f (λu. a u t z) (λs. w))) w y");
+        let input = PositionedBuffer::new("λx. a (λt. b x t (f (λu. a u t z) λs. w)) w y");
         let result = UntypedTerm::parse(input);
         dbg!(&result);
         assert!(result.unwrap().1.buffer.is_empty())
