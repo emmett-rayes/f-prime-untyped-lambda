@@ -25,7 +25,7 @@ fn parse_symbol(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Strin
 
     match chars.next() {
         Some(c) if c.is_alphabetic() => matched.push(c),
-        _ => return Err(input.error("Failed to match symbol.".to_string())),
+        _ => return Err(input.error("Invalid symbol.".to_string())),
     }
 
     for c in chars {
@@ -52,7 +52,7 @@ pub fn parse_literal<'a>(
     if input.buffer.starts_with(expected) {
         Ok((expected.to_string(), input.seek(expected.len())))
     } else {
-        Err(input.error(format!("Failed to match literal {expected}.")))
+        Err(input.error(format!("Expected '{expected}' at this position.")))
     }
 }
 
