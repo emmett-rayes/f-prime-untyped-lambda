@@ -56,9 +56,8 @@ pub fn literal<'a>(
 
 #[cfg(test)]
 mod tests {
-    use std::assert_matches::assert_matches;
-
     use super::*;
+    use std::assert_matches::assert_matches;
 
     #[test]
     fn test_literal() {

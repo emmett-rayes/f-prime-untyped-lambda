@@ -39,11 +39,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::assert_matches::assert_matches;
-
-    use f_prime_parser::PositionedBuffer;
-
     use super::*;
+    use f_prime_parser::PositionedBuffer;
+    use std::assert_matches::assert_matches;
 
     #[test]
     fn test_constant() {
