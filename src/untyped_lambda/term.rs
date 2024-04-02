@@ -1,3 +1,4 @@
+use f_prime_parser::combinators::between;
 use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 
 use crate::expression::variable::Variable;
@@ -69,16 +70,15 @@ pub struct UntypedApplication {
 
 impl Expression for UntypedApplication {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = literal("(")
-            .then(UntypedTerm::parser())
-            .right()
-            .then(UntypedTerm::parser())
-            .then(literal(")"))
-            .left()
-            .map(|(applicand, argument)| UntypedApplication {
-                applicand,
-                argument,
-            });
+        let parser = between(
+            literal("("),
+            UntypedTerm::parser().then(UntypedTerm::parser()),
+            literal(")"),
+        )
+        .map(|(applicand, argument)| UntypedApplication {
+            applicand,
+            argument,
+        });
         parser.parse(input)
     }
 }

@@ -22,3 +22,16 @@ where
         .reduce(|p1, p2| or_else(p1, p2).boxed())
         .expect("Parser list must not be empty")
 }
+
+pub fn between<'a, OL, PL, I, O, P, OR, PR>(l: PL, p: P, r: PR) -> impl Parser<I, Output = O> + 'a
+where
+    I: ParserInput + 'a,
+    O: 'a,
+    P: Parser<I, Output = O> + 'a,
+    OL: 'a,
+    PL: Parser<I, Output = OL> + 'a,
+    OR: 'a,
+    PR: Parser<I, Output = OR> + 'a,
+{
+    l.then(p).right().then(r).left()
+}
