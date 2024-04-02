@@ -1,5 +1,5 @@
-use crate::expression::{literal, Expression, ExpressionParser};
-use f_prime_parser::{BoxedParser, Parser, ParserInput};
+use crate::expression::{literal, Expression};
+use f_prime_parser::{BoxedParser, Parser, PositionedBuffer};
 use std::marker::PhantomData;
 
 #[derive(Debug)]
@@ -15,23 +15,30 @@ pub trait DefinedConstants {
     const CHOICES: &'static [&'static str];
 }
 
-impl<CONSTANTS: DefinedConstants> Expression for Constant<CONSTANTS> {
-    fn parser<'a>() -> ExpressionParser<'a, Self>
-    where
-        Self: Sized,
-    {
-        BoxedParser::new(move |input: ParserInput<'a>| {
+impl<CONSTANTS: DefinedConstants> Expression for Constant<CONSTANTS>
+where
+    Self: Sized,
+{
+    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
+        fn or_else<'a>(
+            this: BoxedParser<'a, PositionedBuffer<'a>, String>,
+            other: impl Parser<PositionedBuffer<'a>, Output = String> + 'a,
+        ) -> BoxedParser<'a, PositionedBuffer<'a>, String> {
+            this.or_else(other).boxed()
+        }
+
+        move |input: PositionedBuffer<'a>| {
             CONSTANTS::CHOICES
                 .iter()
-                .map(|constant| literal(constant))
-                .reduce(Parser::or_else)
+                .map(|constant| literal(constant).boxed())
+                .reduce(or_else)
                 .ok_or(input.clone().error("Failed to match constant.".to_string()))?
                 .map(|symbol| Constant {
                     symbol,
                     constants: PhantomData,
                 })
                 .parse(input)
-        })
+        }
     }
 }
 
@@ -39,7 +46,7 @@ impl<CONSTANTS: DefinedConstants> Expression for Constant<CONSTANTS> {
 mod tests {
     use std::assert_matches::assert_matches;
 
-    use f_prime_parser::ParserInput;
+    use f_prime_parser::PositionedBuffer;
 
     use super::*;
 
@@ -52,19 +59,19 @@ mod tests {
             const CHOICES: &'static [&'static str] = &["fix", "top"];
         }
 
-        let input = ParserInput::new("fix");
+        let input = PositionedBuffer::new("fix");
         assert_matches!(
             Constant::<TestConstants>::parse(input),
             Ok((constant, _)) if constant.symbol == "fix",
         );
 
-        let input = ParserInput::new("top");
+        let input = PositionedBuffer::new("top");
         assert_matches!(
             Constant::<TestConstants>::parse(input),
             Ok((constant, _)) if constant.symbol == "top",
         );
 
-        let input = ParserInput::new("else");
+        let input = PositionedBuffer::new("else");
         assert_matches!(Constant::<TestConstants>::parse(input), Err(_),);
     }
 }

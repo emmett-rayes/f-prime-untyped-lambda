@@ -1,5 +1,5 @@
-use crate::expression::{symbol, Expression, ExpressionParser};
-use f_prime_parser::Parser;
+use crate::expression::{symbol, Expression};
+use f_prime_parser::{Parser, PositionedBuffer};
 
 #[derive(Debug)]
 pub struct Variable {
@@ -7,7 +7,7 @@ pub struct Variable {
 }
 
 impl Expression for Variable {
-    fn parser<'a>() -> ExpressionParser<'a, Self>
+    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
     where
         Self: Sized,
     {
@@ -19,19 +19,19 @@ impl Expression for Variable {
 mod tests {
     use std::assert_matches::assert_matches;
 
-    use f_prime_parser::ParserInput;
+    use f_prime_parser::PositionedBuffer;
 
     use super::*;
 
     #[test]
     fn test_variable() {
-        let input = ParserInput::new("x y");
+        let input = PositionedBuffer::new("x y");
         assert_matches!(
             Variable::parse(input),
             Ok((variable, _)) if variable.symbol == "x",
         );
 
-        let input = ParserInput::new("->");
+        let input = PositionedBuffer::new("->");
         assert_matches!(Variable::parse(input), Err(_),);
     }
 }

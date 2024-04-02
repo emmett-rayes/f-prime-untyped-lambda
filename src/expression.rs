@@ -1,26 +1,30 @@
-use f_prime_parser::{BoxedParser, Parser, ParserInput, ParserResult};
+use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 
-mod constant;
+pub mod constant;
+pub mod variable;
 
-mod variable;
-
-type ExpressionParser<'a, Exp> = BoxedParser<'a, ParserInput<'a>, Exp>;
-
-pub trait Expression {
-    fn parse(input: ParserInput) -> ParserResult<ParserInput, Self>
+pub trait Expression
+where
+    Self: Sized,
+{
+    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self>
     where
         Self: Sized,
     {
         Self::parser().parse(input)
     }
 
-    fn parser<'a>() -> ExpressionParser<'a, Self>
+    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
     where
         Self: Sized;
 }
 
-fn symbol<'a>() -> ExpressionParser<'a, String> {
-    BoxedParser::new(move |input: ParserInput<'a>| {
+struct Symbol {
+    symbol: String,
+}
+
+fn symbol<'a>() -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {
+    move |input: PositionedBuffer<'a>| {
         let mut matched = String::new();
         let mut chars = input.buffer.chars();
 
@@ -39,17 +43,19 @@ fn symbol<'a>() -> ExpressionParser<'a, String> {
 
         let matched_len = matched.len();
         Ok((matched, input.seek(matched_len)))
-    })
+    }
 }
 
-pub fn literal<'a>(expected: &'static str) -> ExpressionParser<'a, String> {
-    BoxedParser::new(move |input: ParserInput<'a>| {
+pub fn literal<'a>(
+    expected: &'static str,
+) -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {
+    move |input: PositionedBuffer<'a>| {
         if input.buffer.starts_with(expected) {
             Ok((expected.to_string(), input.seek(expected.len())))
         } else {
             Err(input.error(format!("Failed to match literal {expected}.")))
         }
-    })
+    }
 }
 
 #[cfg(test)]
@@ -62,13 +68,13 @@ mod tests {
     fn test_literal() {
         let literal_parser = literal("hello");
 
-        let input = ParserInput::new("hello, world!");
+        let input = PositionedBuffer::new("hello, world!");
         assert_matches!(
             literal_parser.parse(input),
             Ok((output, remaining)) if output == "hello" && remaining.buffer == ", world!",
         );
 
-        let input = ParserInput::new("goodbye, world!");
+        let input = PositionedBuffer::new("goodbye, world!");
         assert_matches!(literal_parser.parse(input), Err(_),);
     }
 }
