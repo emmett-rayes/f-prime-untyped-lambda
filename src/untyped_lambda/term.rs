@@ -12,31 +12,19 @@ pub enum UntypedTerm {
 }
 
 impl UntypedTerm {
-    fn variable_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-    where
-        Self: Expression,
-    {
+    fn variable_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
         Variable::parser().map(UntypedTerm::Variable)
     }
 
-    fn abstraction_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-    where
-        Self: Expression,
-    {
+    fn abstraction_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
         UntypedAbstraction::parser().map(|out| UntypedTerm::Abstraction(Box::new(out)))
     }
 
-    fn application_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-    where
-        Self: Expression,
-    {
+    fn application_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
         UntypedApplication::parser().map(|out| UntypedTerm::Application(Box::new(out)))
     }
 
-    fn atom_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-    where
-        Self: Expression,
-    {
+    fn atom_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
         between(literal("("), UntypedTerm::parser(), literal(")"))
             .or_else(UntypedTerm::abstraction_parser())
             .or_else(UntypedTerm::variable_parser())

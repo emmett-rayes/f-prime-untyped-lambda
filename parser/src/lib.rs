@@ -113,7 +113,7 @@ where
 
     fn boxed<'b>(self) -> BoxedParser<'a, I, Self::Output>
     where
-        Self: Sized + 'b,
+        Self: 'b,
     {
         self
     }

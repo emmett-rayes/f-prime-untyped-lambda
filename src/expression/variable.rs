@@ -7,10 +7,7 @@ pub struct Variable {
 }
 
 impl Expression for Variable {
-    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self>
-    where
-        Self: Sized,
-    {
+    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = symbol().map(|output| Variable { symbol: output });
         parser.parse(input)
     }

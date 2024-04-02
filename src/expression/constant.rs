@@ -16,10 +16,7 @@ pub trait DefinedConstants {
     const CHOICES: &'static [&'static str];
 }
 
-impl<CONSTANTS: DefinedConstants> Expression for Constant<CONSTANTS>
-where
-    Self: Sized,
-{
+impl<CONSTANTS: DefinedConstants> Expression for Constant<CONSTANTS> {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = one_of(
             CONSTANTS::CHOICES
