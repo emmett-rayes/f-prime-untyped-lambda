@@ -1,5 +1,5 @@
-use crate::expression::{symbol, Expression, ExpressionParser};
-use f_prime_parser::Parser;
+use crate::expression::{symbol, Expression};
+use f_prime_parser::{Parser, PositionedBuffer};
 
 #[derive(Debug)]
 pub struct Variable {
@@ -7,11 +7,11 @@ pub struct Variable {
 }
 
 impl Expression for Variable {
-    fn parser<'a>() -> ExpressionParser<'a, Self>
+    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
     where
         Self: Sized,
     {
-        symbol().map(|output| Variable { symbol: output }).boxed()
+        symbol().map(|output| Variable { symbol: output })
     }
 }
 
