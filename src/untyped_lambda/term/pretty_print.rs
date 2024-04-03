@@ -98,7 +98,7 @@ mod tests {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
         let term = DeBruijnConverter::convert(output.unwrap().0);
-        assert_eq!(UntypedPrettyPrinter::format(term), "(λλλw 3 2 1)");
+        assert_eq!(UntypedPrettyPrinter::format(term), "λ λ λ w 3 2 1");
     }
 
     #[test]
@@ -106,7 +106,7 @@ mod tests {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
         let term = output.unwrap().0;
-        assert_eq!(UntypedPrettyPrinter::format(term), "(λx.λy.λz.w x y z)");
+        assert_eq!(UntypedPrettyPrinter::format(term), "λ x.λ y.λ z.w x y z");
     }
 
     #[test]
@@ -114,6 +114,6 @@ mod tests {
         let input = PositionedBuffer::new("λx y z.x z (y z)");
         let output = UntypedTerm::parse(input);
         let term = DeBruijnConverter::convert(output.unwrap().0);
-        assert_eq!(UntypedPrettyPrinter::format(term), "(λλλ3 1 (2 1))");
+        assert_eq!(UntypedPrettyPrinter::format(term), "λ λ λ 3 1 (2 1)");
     }
 }
