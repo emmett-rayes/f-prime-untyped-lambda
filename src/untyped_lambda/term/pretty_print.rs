@@ -94,7 +94,7 @@ mod tests {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
         let term = output.unwrap().0;
-        assert_eq!(UntypedPrettyPrinter::format(term), "λ x.λ y.λ z.w x y z");
+        assert_eq!(UntypedPrettyPrinter::format(term), "λ x. λ y. λ z. w x y z");
     }
 
     #[test]
