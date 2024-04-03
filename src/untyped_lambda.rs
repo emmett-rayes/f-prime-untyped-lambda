@@ -1,1 +1,1 @@
-mod term;
+pub mod term;
