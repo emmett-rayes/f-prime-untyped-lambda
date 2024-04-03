@@ -71,6 +71,35 @@ mod tests {
     fn test_de_bruijn() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
-        dbg!(DeBruijnConverter::convert(output.unwrap().0));
+        let term = output.unwrap().0;
+        let should = UntypedTerm::from(UntypedAbstraction::new(
+            Variable::new("x"),
+            UntypedTerm::from(UntypedAbstraction::new(
+                Variable::new("y"),
+                UntypedTerm::from(UntypedAbstraction::new(
+                    Variable::new("z"),
+                    UntypedTerm::from(UntypedApplication::new(
+                        UntypedTerm::from(UntypedApplication::new(
+                            UntypedTerm::from(UntypedApplication::new(
+                                UntypedTerm::from(Variable::new("w")),
+                                UntypedTerm::from(Variable {
+                                    symbol: String::from("x"),
+                                    index: 3,
+                                }),
+                            )),
+                            UntypedTerm::from(Variable {
+                                symbol: String::from("y"),
+                                index: 2,
+                            }),
+                        )),
+                        UntypedTerm::from(Variable {
+                            symbol: String::from("z"),
+                            index: 1,
+                        }),
+                    )),
+                )),
+            )),
+        ));
+        assert_eq!(DeBruijnConverter::convert(term), should);
     }
 }
