@@ -5,31 +5,31 @@ use std::collections::{HashMap, LinkedList};
 use std::ops::DerefMut;
 
 #[derive(Default)]
-struct DeBruijnVisitor {
+pub struct DeBruijnConverter {
     current_scope: VariableIndex,
     variable_map: HashMap<String, LinkedList<VariableIndex>>,
 }
 
-impl DeBruijnVisitor {
+impl DeBruijnConverter {
     pub fn convert(term: UntypedTerm) -> UntypedTerm {
-        let mut visitor = DeBruijnVisitor::default();
+        let mut visitor = DeBruijnConverter::default();
         visitor.visit(term)
     }
 }
 
-impl Visitor<Variable> for DeBruijnVisitor {
+impl Visitor<Variable> for DeBruijnConverter {
     type Result = Variable;
 
     fn visit(&mut self, mut variable: Variable) -> Self::Result {
         if let Some(scopes) = self.variable_map.get(&variable.symbol) {
-            let binding_scope = *scopes.front().unwrap_or_else(|| unreachable!());
+            let binding_scope = *scopes.front().unwrap();
             variable.index = self.current_scope - binding_scope + 1;
         }
         variable
     }
 }
 
-impl Visitor<Box<UntypedAbstraction>> for DeBruijnVisitor {
+impl Visitor<Box<UntypedAbstraction>> for DeBruijnConverter {
     type Result = Box<UntypedAbstraction>;
 
     fn visit(&mut self, mut abstraction: Box<UntypedAbstraction>) -> Self::Result {
@@ -44,7 +44,7 @@ impl Visitor<Box<UntypedAbstraction>> for DeBruijnVisitor {
     }
 }
 
-impl Visitor<Box<UntypedApplication>> for DeBruijnVisitor {
+impl Visitor<Box<UntypedApplication>> for DeBruijnConverter {
     type Result = Box<UntypedApplication>;
 
     fn visit(&mut self, mut application: Box<UntypedApplication>) -> Self::Result {
@@ -69,9 +69,8 @@ mod tests {
 
     #[test]
     fn test_debruijn() {
-        // let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let input = PositionedBuffer::new("(λs.λz.s z)");
+        let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let result = UntypedTerm::parse(input);
-        dbg!(DeBruijnVisitor::convert(result.unwrap().0));
+        dbg!(DeBruijnConverter::convert(result.unwrap().0));
     }
 }

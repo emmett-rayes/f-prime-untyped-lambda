@@ -5,6 +5,7 @@ use f_prime_parser::combinators::between;
 use f_prime_parser::{Parser, ParserResult, PositionedBuffer, ThenParserExtensions};
 
 pub mod debruijn;
+pub mod pretty_print;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum UntypedTerm {
@@ -92,7 +93,7 @@ impl Expression for UntypedApplication {
                         unreachable!()
                     }
                 })
-                .unwrap_or_else(|| unreachable!())
+                .unwrap()
         });
 
         parser.parse(input)
