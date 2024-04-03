@@ -50,11 +50,14 @@ impl Visitor<Box<UntypedApplication>> for UntypedPrettyPrinter {
     type Result = String;
 
     fn visit(&mut self, application: Box<UntypedApplication>) -> Self::Result {
-        format!(
-            "{} {}",
-            self.visit(application.applicator),
-            self.visit(application.argument)
-        )
+        let argument_is_application = matches!(application.argument, UntypedTerm::Application(_));
+        let applicator = self.visit(application.applicator);
+        let argument = self.visit(application.argument);
+        if argument_is_application {
+            format!("{} ({})", applicator, argument,)
+        } else {
+            format!("{} {}", applicator, argument,)
+        }
     }
 }
 
@@ -91,5 +94,13 @@ mod tests {
         let output = UntypedTerm::parse(input);
         let term = output.unwrap().0;
         assert_eq!(UntypedPrettyPrinter::format(term), "(λx.λy.λz.w x y z)");
+    }
+
+    #[test]
+    fn test_associativity() {
+        let input = PositionedBuffer::new("λx y z.x z (y z)");
+        let output = UntypedTerm::parse(input);
+        let term = DeBruijnConverter::convert(output.unwrap().0);
+        assert_eq!(UntypedPrettyPrinter::format(term), "(λλλ3 1 (2 1))");
     }
 }
