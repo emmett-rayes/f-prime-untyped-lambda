@@ -10,13 +10,18 @@ pub struct UntypedPrettyPrinter {
 
 impl UntypedPrettyPrinter {
     pub fn format(term: UntypedTerm) -> String {
+        let term_is_abstraction = matches!(term, UntypedTerm::Abstraction(_));
         let mut visitor = UntypedPrettyPrinter::default();
         let string = visitor.visit(term);
-        string
-            .strip_prefix('(')
-            .and_then(|s| s.strip_suffix(')'))
-            .map(|s| s.to_string())
-            .unwrap_or(string)
+        if term_is_abstraction {
+            string
+                .strip_prefix('(')
+                .and_then(|s| s.strip_suffix(')'))
+                .map(|s| s.to_string())
+                .unwrap_or(string)
+        } else {
+            string
+        }
     }
 }
 
