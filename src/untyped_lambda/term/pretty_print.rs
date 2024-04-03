@@ -1,12 +1,16 @@
 use crate::expression::variable::Variable;
 use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
 use crate::visitor::Visitor;
+use std::collections::HashSet;
 
-pub struct UntypedPrettyPrinter;
+#[derive(Default)]
+pub struct UntypedPrettyPrinter {
+    free_variables: HashSet<String>,
+}
 
 impl UntypedPrettyPrinter {
     pub fn format(term: UntypedTerm) -> String {
-        let mut visitor = UntypedPrettyPrinter;
+        let mut visitor = UntypedPrettyPrinter::default();
         visitor.visit(term)
     }
 }
@@ -16,7 +20,8 @@ impl Visitor<Variable> for UntypedPrettyPrinter {
 
     fn visit(&mut self, variable: Variable) -> Self::Result {
         if variable.index == 0 {
-            variable.symbol.to_string()
+            self.free_variables.insert(variable.symbol.clone());
+            variable.symbol.clone()
         } else {
             variable.index.to_string()
         }
@@ -29,11 +34,15 @@ impl Visitor<Box<UntypedAbstraction>> for UntypedPrettyPrinter {
     fn visit(&mut self, abstraction: Box<UntypedAbstraction>) -> Self::Result {
         let body = self.visit(abstraction.body);
         let body = if body.starts_with("(λ") {
-            body.strip_prefix('(').unwrap().strip_suffix(')').unwrap()
+            body.strip_prefix("(").unwrap().strip_suffix(')').unwrap()
         } else {
             body.as_str()
         };
-        format!("(λ{})", body)
+        if self.free_variables.remove(&abstraction.parameter.symbol) {
+            format!("(λ{}.{})", abstraction.parameter.symbol, body)
+        } else {
+            format!("(λ{})", body)
+        }
     }
 }
 
@@ -69,10 +78,18 @@ mod tests {
     use f_prime_parser::PositionedBuffer;
 
     #[test]
-    fn test_pretty_print() {
+    fn test_pretty_print_de_bruin() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let result = UntypedTerm::parse(input);
         let term = DeBruijnConverter::convert(result.unwrap().0);
-        dbg!(UntypedPrettyPrinter::format(term));
+        assert_eq!(UntypedPrettyPrinter::format(term), "(λλλw 3 2 1)");
+    }
+
+    #[test]
+    fn test_pretty_print_symbolic() {
+        let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
+        let result = UntypedTerm::parse(input);
+        let term = result.unwrap().0;
+        assert_eq!(UntypedPrettyPrinter::format(term), "(λx.λy.λz.w x y z)");
     }
 }
