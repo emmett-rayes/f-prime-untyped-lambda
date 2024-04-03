@@ -11,7 +11,12 @@ pub struct UntypedPrettyPrinter {
 impl UntypedPrettyPrinter {
     pub fn format(term: UntypedTerm) -> String {
         let mut visitor = UntypedPrettyPrinter::default();
-        visitor.visit(term)
+        let string = visitor.visit(term);
+        string
+            .strip_prefix('(')
+            .and_then(|s| s.strip_suffix(')'))
+            .map(|s| s.to_string())
+            .unwrap_or(string)
     }
 }
 
