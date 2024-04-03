@@ -64,6 +64,18 @@ impl From<Box<UntypedApplication>> for UntypedTerm {
     }
 }
 
+impl TryFrom<UntypedTerm> for Variable {
+    type Error = String;
+
+    fn try_from(term: UntypedTerm) -> Result<Self, Self::Error> {
+        if let UntypedTerm::Variable(variable) = term {
+            Ok(variable)
+        } else {
+            Err(String::from("Term is not an variable."))
+        }
+    }
+}
+
 impl Visitable for UntypedTerm {}
 
 impl Expression for UntypedTerm {
@@ -88,16 +100,33 @@ impl UntypedAbstraction {
     }
 }
 
+impl TryFrom<UntypedTerm> for UntypedAbstraction {
+    type Error = String;
+
+    fn try_from(term: UntypedTerm) -> Result<Self, Self::Error> {
+        if let UntypedTerm::Abstraction(abstraction) = term {
+            Ok(*abstraction)
+        } else {
+            Err(String::from("Term is not an abstraction."))
+        }
+    }
+}
+
 impl Visitable for UntypedAbstraction {}
 
 impl Expression for UntypedAbstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = literal("@")
             .or_else(literal("λ"))
-            .skip_then(Variable::parser())
+            .skip_then(Variable::parser().at_least(1))
             .then_skip(literal("."))
             .then(UntypedTerm::parser())
-            .map(|(parameter, body)| UntypedAbstraction { parameter, body });
+            .map(|(parameters, body)| {
+                parameters.into_iter().rfold(body, |body, parameter| {
+                    UntypedTerm::from(UntypedAbstraction::new(parameter, body))
+                })
+            })
+            .map(|term| UntypedAbstraction::try_from(term).unwrap());
 
         parser.parse(input)
     }
@@ -118,6 +147,18 @@ impl UntypedApplication {
     }
 }
 
+impl TryFrom<UntypedTerm> for UntypedApplication {
+    type Error = String;
+
+    fn try_from(term: UntypedTerm) -> Result<Self, Self::Error> {
+        if let UntypedTerm::Application(application) = term {
+            Ok(*application)
+        } else {
+            Err(String::from("Term is not an application."))
+        }
+    }
+}
+
 impl Visitable for UntypedApplication {}
 
 impl Expression for UntypedApplication {
@@ -125,14 +166,10 @@ impl Expression for UntypedApplication {
         let parser = UntypedTerm::atom_parser().at_least(2).map(|terms| {
             terms
                 .into_iter()
-                .reduce(|applicator, argument| UntypedApplication::new(applicator, argument).into())
-                .map(|application| {
-                    if let UntypedTerm::Application(bx) = application {
-                        *bx
-                    } else {
-                        unreachable!()
-                    }
+                .reduce(|applicator, argument| {
+                    UntypedTerm::from(UntypedApplication::new(applicator, argument))
                 })
+                .map(|term| UntypedApplication::try_from(term).unwrap())
                 .unwrap()
         });
 
@@ -182,7 +219,14 @@ mod tests {
     #[test]
     fn test_parser() {
         let input = PositionedBuffer::new("λx. a (λt. b x t (f (λu. a u t z) λs. w)) w y");
-        let result = UntypedTerm::parse(input);
-        assert!(result.unwrap().1.buffer.is_empty())
+        let output = UntypedTerm::parse(input);
+        assert!(output.unwrap().1.buffer.is_empty())
+    }
+
+    #[test]
+    fn test_multi_abstraction() {
+        let input = PositionedBuffer::new("λx y.x y z");
+        let output = UntypedTerm::parse(input);
+        assert!(output.unwrap().1.buffer.is_empty())
     }
 }
