@@ -4,19 +4,28 @@ use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub struct Constant<T>
-where
-    T: DefinedConstants,
-{
+pub struct Constant<T> {
     symbol: String,
     constants: PhantomData<T>,
+}
+
+impl<T> Constant<T> {
+    pub fn new(symbol: &str) -> Self {
+        Constant {
+            symbol: symbol.to_string(),
+            constants: PhantomData,
+        }
+    }
 }
 
 pub trait DefinedConstants {
     const CHOICES: &'static [&'static str];
 }
 
-impl<CONSTANTS: DefinedConstants> Expression for Constant<CONSTANTS> {
+impl<CONSTANTS> Expression for Constant<CONSTANTS>
+where
+    CONSTANTS: DefinedConstants,
+{
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = one_of(
             CONSTANTS::CHOICES
@@ -24,10 +33,8 @@ impl<CONSTANTS: DefinedConstants> Expression for Constant<CONSTANTS> {
                 .map(|constant| literal(constant).boxed())
                 .collect(),
         )
-        .map(|symbol| Constant {
-            symbol,
-            constants: PhantomData,
-        });
+        .map(Constant::new);
+
         parser.parse(input)
     }
 }

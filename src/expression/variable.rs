@@ -11,8 +11,11 @@ pub struct Variable {
 }
 
 impl Variable {
-    pub(crate) fn new(symbol: String) -> Self {
-        Variable { symbol, index: 0 }
+    pub(crate) fn new(symbol: &str) -> Self {
+        Variable {
+            symbol: symbol.to_string(),
+            index: 0,
+        }
     }
 }
 
@@ -20,7 +23,7 @@ impl Visitable for Variable {}
 
 impl Expression for Variable {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = symbol().map(|output| Variable::new(output));
+        let parser = symbol().map(Variable::new);
         parser.parse(input)
     }
 }

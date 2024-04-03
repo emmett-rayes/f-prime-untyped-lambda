@@ -16,21 +16,51 @@ pub enum UntypedTerm {
 
 impl UntypedTerm {
     fn variable_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
-        Variable::parser().map(UntypedTerm::Variable)
+        Variable::parser().map(UntypedTerm::from)
     }
 
     fn abstraction_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
-        UntypedAbstraction::parser().map(|out| UntypedTerm::Abstraction(Box::new(out)))
+        UntypedAbstraction::parser().map(UntypedTerm::from)
     }
 
     fn application_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
-        UntypedApplication::parser().map(|out| UntypedTerm::Application(Box::new(out)))
+        UntypedApplication::parser().map(UntypedTerm::from)
     }
 
     fn atom_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
         between(literal("("), UntypedTerm::parser(), literal(")"))
             .or_else(UntypedTerm::abstraction_parser())
             .or_else(UntypedTerm::variable_parser())
+    }
+}
+
+impl From<Variable> for UntypedTerm {
+    fn from(variable: Variable) -> Self {
+        UntypedTerm::Variable(variable)
+    }
+}
+
+impl From<UntypedAbstraction> for UntypedTerm {
+    fn from(abstraction: UntypedAbstraction) -> Self {
+        UntypedTerm::Abstraction(Box::new(abstraction))
+    }
+}
+
+impl From<Box<UntypedAbstraction>> for UntypedTerm {
+    fn from(abstraction: Box<UntypedAbstraction>) -> Self {
+        UntypedTerm::Abstraction(abstraction)
+    }
+}
+
+impl From<UntypedApplication> for UntypedTerm {
+    fn from(application: UntypedApplication) -> Self {
+        UntypedTerm::Application(Box::new(application))
+    }
+}
+
+impl From<Box<UntypedApplication>> for UntypedTerm {
+    fn from(application: Box<UntypedApplication>) -> Self {
+        UntypedTerm::Application(application)
     }
 }
 
@@ -50,6 +80,12 @@ impl Expression for UntypedTerm {
 pub struct UntypedAbstraction {
     parameter: Variable,
     body: UntypedTerm,
+}
+
+impl UntypedAbstraction {
+    pub fn new(parameter: Variable, body: UntypedTerm) -> Self {
+        UntypedAbstraction { parameter, body }
+    }
 }
 
 impl Visitable for UntypedAbstraction {}
@@ -73,6 +109,15 @@ pub struct UntypedApplication {
     argument: UntypedTerm,
 }
 
+impl UntypedApplication {
+    pub fn new(applicator: UntypedTerm, argument: UntypedTerm) -> Self {
+        UntypedApplication {
+            applicator,
+            argument,
+        }
+    }
+}
+
 impl Visitable for UntypedApplication {}
 
 impl Expression for UntypedApplication {
@@ -80,12 +125,7 @@ impl Expression for UntypedApplication {
         let parser = UntypedTerm::atom_parser().at_least(2).map(|terms| {
             terms
                 .into_iter()
-                .reduce(|applicator, argument| {
-                    UntypedTerm::Application(Box::new(UntypedApplication {
-                        applicator,
-                        argument,
-                    }))
-                })
+                .reduce(|applicator, argument| UntypedApplication::new(applicator, argument).into())
                 .map(|application| {
                     if let UntypedTerm::Application(bx) = application {
                         *bx
@@ -127,13 +167,9 @@ where
 
     fn visit(&mut self, term: UntypedTerm) -> Self::Result {
         match term {
-            UntypedTerm::Variable(variable) => UntypedTerm::Variable(self.visit(variable)),
-            UntypedTerm::Abstraction(abstraction) => {
-                UntypedTerm::Abstraction(self.visit(abstraction))
-            }
-            UntypedTerm::Application(application) => {
-                UntypedTerm::Application(self.visit(application))
-            }
+            UntypedTerm::Variable(variable) => UntypedTerm::from(self.visit(variable)),
+            UntypedTerm::Abstraction(abstraction) => UntypedTerm::from(self.visit(abstraction)),
+            UntypedTerm::Application(application) => UntypedTerm::from(self.visit(application)),
         }
     }
 }

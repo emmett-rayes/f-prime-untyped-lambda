@@ -80,16 +80,16 @@ mod tests {
     #[test]
     fn test_pretty_print_de_bruin() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let result = UntypedTerm::parse(input);
-        let term = DeBruijnConverter::convert(result.unwrap().0);
+        let output = UntypedTerm::parse(input);
+        let term = DeBruijnConverter::convert(output.unwrap().0);
         assert_eq!(UntypedPrettyPrinter::format(term), "(λλλw 3 2 1)");
     }
 
     #[test]
     fn test_pretty_print_symbolic() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let result = UntypedTerm::parse(input);
-        let term = result.unwrap().0;
+        let output = UntypedTerm::parse(input);
+        let term = output.unwrap().0;
         assert_eq!(UntypedPrettyPrinter::format(term), "(λx.λy.λz.w x y z)");
     }
 }

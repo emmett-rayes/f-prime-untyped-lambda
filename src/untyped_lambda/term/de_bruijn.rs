@@ -56,7 +56,7 @@ impl Visitor<Box<UntypedApplication>> for DeBruijnConverter {
 }
 
 fn replace_term(dst: &mut UntypedTerm, f: impl FnOnce(UntypedTerm) -> UntypedTerm) {
-    let dummy_term = UntypedTerm::Variable(Variable::new("".to_string()));
+    let dummy_term = UntypedTerm::from(Variable::new(""));
     let term = std::mem::replace(dst, dummy_term);
     let _ = std::mem::replace(dst, f(term));
 }
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn test_de_bruijn() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let result = UntypedTerm::parse(input);
-        dbg!(DeBruijnConverter::convert(result.unwrap().0));
+        let output = UntypedTerm::parse(input);
+        dbg!(DeBruijnConverter::convert(output.unwrap().0));
     }
 }

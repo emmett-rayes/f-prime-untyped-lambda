@@ -17,39 +17,38 @@ where
     }
 }
 
-fn parse_symbol(input: PositionedBuffer) -> ParserResult<PositionedBuffer, String> {
+fn parse_symbol(input: PositionedBuffer) -> ParserResult<PositionedBuffer, &str> {
     let input = input.seek_whitespace();
-    let mut matched = String::new();
     let mut chars = input.buffer.chars();
 
+    let mut matched = 0;
     match chars.next() {
-        Some(c) if c.is_ascii_alphabetic() => matched.push(c),
+        Some(c) if c.is_ascii_alphabetic() => matched += 1,
         _ => return Err(input.error("Invalid symbol.".to_string())),
     }
 
     for c in chars {
         if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
-            matched.push(c);
+            matched += 1;
         } else {
             break;
         }
     }
 
-    let matched_len = matched.len();
-    Ok((matched, input.seek(matched_len)))
+    Ok((&input.buffer[0..matched], input.seek(matched)))
 }
 
-pub fn symbol<'a>() -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {
+pub fn symbol<'a>() -> impl Parser<PositionedBuffer<'a>, Output = &'a str> + 'a {
     parse_symbol
 }
 
 pub fn parse_literal<'a>(
     expected: &str,
     input: PositionedBuffer<'a>,
-) -> ParserResult<PositionedBuffer<'a>, String> {
+) -> ParserResult<PositionedBuffer<'a>, &'a str> {
     let input = input.seek_whitespace();
     if input.buffer.starts_with(expected) {
-        Ok((expected.to_string(), input.seek(expected.len())))
+        Ok((&input.buffer[0..expected.len()], input.seek(expected.len())))
     } else {
         Err(input.error(format!("Expected '{expected}' at this position.")))
     }
@@ -57,7 +56,7 @@ pub fn parse_literal<'a>(
 
 pub fn literal<'a>(
     expected: &'static str,
-) -> impl Parser<PositionedBuffer<'a>, Output = String> + 'a {
+) -> impl Parser<PositionedBuffer<'a>, Output = &'a str> + 'a {
     move |input: PositionedBuffer<'a>| parse_literal(expected, input)
 }
 
