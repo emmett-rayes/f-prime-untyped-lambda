@@ -181,9 +181,8 @@ mod tests {
 
     #[test]
     fn test_parser() {
-        let input = PositionedBuffer::new("λs. λz. s z");
+        let input = PositionedBuffer::new("λx. a (λt. b x t (f (λu. a u t z) λs. w)) w y");
         let result = UntypedTerm::parse(input);
-        dbg!(&result);
         assert!(result.unwrap().1.buffer.is_empty())
     }
 }
