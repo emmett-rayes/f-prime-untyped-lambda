@@ -15,7 +15,7 @@ pub fn convert_de_bruijn(term: UntypedTerm) -> UntypedTerm {
 }
 
 pub fn pretty_print_untyped_term(term: UntypedTerm) -> String {
-    UntypedPrettyPrinter::format(term)
+    UntypedPrettyPrinter::format_de_bruijn(term)
 }
 
 pub fn process_untyped(input: &str) -> String {

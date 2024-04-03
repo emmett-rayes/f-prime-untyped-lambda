@@ -6,12 +6,16 @@ use std::collections::HashSet;
 #[derive(Default)]
 pub struct UntypedPrettyPrinter {
     free_variables: HashSet<String>,
+    de_bruijn: bool,
 }
 
 impl UntypedPrettyPrinter {
-    pub fn format(term: UntypedTerm) -> String {
+    fn format_inner(term: UntypedTerm, de_bruijn: bool) -> String {
         let term_is_abstraction = matches!(term, UntypedTerm::Abstraction(_));
-        let mut visitor = UntypedPrettyPrinter::default();
+        let mut visitor = UntypedPrettyPrinter {
+            de_bruijn,
+            ..Default::default()
+        };
         let string = visitor.visit(term);
         if term_is_abstraction {
             string
@@ -23,13 +27,21 @@ impl UntypedPrettyPrinter {
             string
         }
     }
+
+    pub fn format(term: UntypedTerm) -> String {
+        Self::format_inner(term, false)
+    }
+
+    pub fn format_de_bruijn(term: UntypedTerm) -> String {
+        Self::format_inner(term, true)
+    }
 }
 
 impl Visitor<Variable> for UntypedPrettyPrinter {
     type Result = String;
 
     fn visit(&mut self, variable: Variable) -> Self::Result {
-        if variable.index == 0 {
+        if variable.index == 0 || !self.de_bruijn {
             self.free_variables.insert(variable.symbol.clone());
             variable.symbol.clone()
         } else {
@@ -51,8 +63,8 @@ impl Visitor<UntypedAbstraction> for UntypedPrettyPrinter {
         } else {
             body.as_str()
         };
-        if self.free_variables.remove(&abstraction.parameter.symbol) {
-            format!("(λ {}. {})", abstraction.parameter.symbol, body)
+        if !self.de_bruijn || self.free_variables.remove(&abstraction.parameter.symbol) {
+            format!("(λ{}. {})", abstraction.parameter.symbol, body)
         } else {
             format!("(λ {})", body)
         }
@@ -86,7 +98,10 @@ mod tests {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
         let term = DeBruijnConverter::convert(output.unwrap().0);
-        assert_eq!(UntypedPrettyPrinter::format(term), "λ λ λ w 3 2 1");
+        assert_eq!(
+            UntypedPrettyPrinter::format_de_bruijn(term),
+            "λ λ λ w 3 2 1"
+        );
     }
 
     #[test]
@@ -94,7 +109,10 @@ mod tests {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
         let term = output.unwrap().0;
-        assert_eq!(UntypedPrettyPrinter::format(term), "λ x. λ y. λ z. w x y z");
+        assert_eq!(
+            UntypedPrettyPrinter::format_de_bruijn(term),
+            "λ x. λ y. λ z. w x y z"
+        );
     }
 
     #[test]
@@ -102,6 +120,9 @@ mod tests {
         let input = PositionedBuffer::new("λx y z.x z (y z)");
         let output = UntypedTerm::parse(input);
         let term = DeBruijnConverter::convert(output.unwrap().0);
-        assert_eq!(UntypedPrettyPrinter::format(term), "λ λ λ 3 1 (2 1)");
+        assert_eq!(
+            UntypedPrettyPrinter::format_de_bruijn(term),
+            "λ λ λ 3 1 (2 1)"
+        );
     }
 }

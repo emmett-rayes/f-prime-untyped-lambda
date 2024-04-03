@@ -78,7 +78,7 @@ mod tests {
         let output = UntypedTerm::parse(input);
         let term = DeBruijnConverter::convert(output.unwrap().0);
         let value = CallByValueEvaluator::reduce(term);
-        let result = UntypedPrettyPrinter::format(value.unwrap());
+        let result = UntypedPrettyPrinter::format_de_bruijn(value.unwrap());
         assert_eq!(result, "λ y");
     }
 }
