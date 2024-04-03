@@ -1,5 +1,5 @@
 [workspace]
-members = ["parser"]
+members = ["parser", "repl"]
 
 [package]
 name = "f_prime"

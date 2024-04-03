@@ -12,3 +12,10 @@ dependencies = [
 [[package]]
 name = "f_prime_parser"
 version = "0.1.0"
+
+[[package]]
+name = "repl"
+version = "0.1.0"
+dependencies = [
+ "f_prime",
+]
