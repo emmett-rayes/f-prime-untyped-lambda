@@ -40,6 +40,7 @@ impl Visitor<Box<UntypedAbstraction>> for DeBruijnConverter {
             .push_front(self.current_scope);
         let abstraction_ref = abstraction.deref_mut();
         replace_term(&mut abstraction_ref.body, |term| self.visit(term));
+        self.current_scope -= 1;
         abstraction
     }
 }
