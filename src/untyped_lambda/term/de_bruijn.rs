@@ -29,29 +29,27 @@ impl Visitor<Variable> for DeBruijnConverter {
     }
 }
 
-impl Visitor<Box<UntypedAbstraction>> for DeBruijnConverter {
-    type Result = Box<UntypedAbstraction>;
+impl Visitor<UntypedAbstraction> for DeBruijnConverter {
+    type Result = UntypedAbstraction;
 
-    fn visit(&mut self, mut abstraction: Box<UntypedAbstraction>) -> Self::Result {
+    fn visit(&mut self, mut abstraction: UntypedAbstraction) -> Self::Result {
         self.current_scope += 1;
         self.variable_map
             .entry(abstraction.parameter.symbol.clone())
             .or_default()
             .push_front(self.current_scope);
-        let abstraction_ref = abstraction.deref_mut();
-        replace_term(&mut abstraction_ref.body, |term| self.visit(term));
+        replace_term(&mut abstraction.body, |term| self.visit(term));
         self.current_scope -= 1;
         abstraction
     }
 }
 
-impl Visitor<Box<UntypedApplication>> for DeBruijnConverter {
-    type Result = Box<UntypedApplication>;
+impl Visitor<UntypedApplication> for DeBruijnConverter {
+    type Result = UntypedApplication;
 
-    fn visit(&mut self, mut application: Box<UntypedApplication>) -> Self::Result {
-        let application_ref = application.deref_mut();
-        replace_term(&mut application_ref.applicator, |term| self.visit(term));
-        replace_term(&mut application_ref.argument, |term| self.visit(term));
+    fn visit(&mut self, mut application: UntypedApplication) -> Self::Result {
+        replace_term(&mut application.applicator, |term| self.visit(term));
+        replace_term(&mut application.argument, |term| self.visit(term));
         application
     }
 }

@@ -38,10 +38,10 @@ impl Visitor<Variable> for UntypedPrettyPrinter {
     }
 }
 
-impl Visitor<Box<UntypedAbstraction>> for UntypedPrettyPrinter {
+impl Visitor<UntypedAbstraction> for UntypedPrettyPrinter {
     type Result = String;
 
-    fn visit(&mut self, abstraction: Box<UntypedAbstraction>) -> Self::Result {
+    fn visit(&mut self, abstraction: UntypedAbstraction) -> Self::Result {
         let body_is_abstraction = matches!(abstraction.body, UntypedTerm::Abstraction(_));
         let body = self.visit(abstraction.body);
         let body = if body_is_abstraction {
@@ -59,10 +59,10 @@ impl Visitor<Box<UntypedAbstraction>> for UntypedPrettyPrinter {
     }
 }
 
-impl Visitor<Box<UntypedApplication>> for UntypedPrettyPrinter {
+impl Visitor<UntypedApplication> for UntypedPrettyPrinter {
     type Result = String;
 
-    fn visit(&mut self, application: Box<UntypedApplication>) -> Self::Result {
+    fn visit(&mut self, application: UntypedApplication) -> Self::Result {
         let argument_is_application = matches!(application.argument, UntypedTerm::Application(_));
         let applicator = self.visit(application.applicator);
         let argument = self.visit(application.argument);
@@ -80,8 +80,8 @@ impl Visitor<UntypedTerm> for UntypedPrettyPrinter {
     fn visit(&mut self, term: UntypedTerm) -> Self::Result {
         match term {
             UntypedTerm::Variable(variable) => self.visit(variable),
-            UntypedTerm::Abstraction(abstraction) => self.visit(abstraction),
-            UntypedTerm::Application(application) => self.visit(application),
+            UntypedTerm::Abstraction(abstraction) => self.visit(*abstraction),
+            UntypedTerm::Application(application) => self.visit(*application),
         }
     }
 }

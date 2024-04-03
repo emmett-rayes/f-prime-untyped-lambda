@@ -181,16 +181,16 @@ impl Expression for UntypedApplication {
 pub trait UntypedTermVisitor
 where
     Self: Visitor<Variable>
-        + Visitor<Box<UntypedAbstraction>>
-        + Visitor<Box<UntypedApplication>>
+        + Visitor<UntypedAbstraction>
+        + Visitor<UntypedApplication>
         + Visitor<UntypedTerm>,
 {
 }
 
 impl<T> UntypedTermVisitor for T where
     T: Visitor<Variable>
-        + Visitor<Box<UntypedAbstraction>>
-        + Visitor<Box<UntypedApplication>>
+        + Visitor<UntypedAbstraction>
+        + Visitor<UntypedApplication>
         + Visitor<UntypedTerm>
 {
 }
@@ -198,16 +198,16 @@ impl<T> UntypedTermVisitor for T where
 impl<T> Visitor<UntypedTerm> for T
 where
     T: Visitor<Variable, Result = Variable>
-        + Visitor<Box<UntypedAbstraction>, Result = Box<UntypedAbstraction>>
-        + Visitor<Box<UntypedApplication>, Result = Box<UntypedApplication>>,
+        + Visitor<UntypedAbstraction, Result = UntypedAbstraction>
+        + Visitor<UntypedApplication, Result = UntypedApplication>,
 {
     type Result = UntypedTerm;
 
     fn visit(&mut self, term: UntypedTerm) -> Self::Result {
         match term {
             UntypedTerm::Variable(variable) => UntypedTerm::from(self.visit(variable)),
-            UntypedTerm::Abstraction(abstraction) => UntypedTerm::from(self.visit(abstraction)),
-            UntypedTerm::Application(application) => UntypedTerm::from(self.visit(application)),
+            UntypedTerm::Abstraction(abstraction) => UntypedTerm::from(self.visit(*abstraction)),
+            UntypedTerm::Application(application) => UntypedTerm::from(self.visit(*application)),
         }
     }
 }
