@@ -39,6 +39,10 @@ impl Visitor<UntypedAbstraction> for DeBruijnConverter {
             .or_default()
             .push_front(self.current_scope);
         replace_term(&mut abstraction.body, |term| self.visit(term));
+        self.variable_map
+            .get_mut(&abstraction.parameter.symbol.clone())
+            .unwrap()
+            .pop_front();
         self.current_scope -= 1;
         UntypedTerm::from(abstraction)
     }
