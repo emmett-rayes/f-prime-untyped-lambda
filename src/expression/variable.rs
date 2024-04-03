@@ -1,23 +1,26 @@
 use crate::expression::{symbol, Expression};
+use crate::visitor::Visitable;
 use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 
 pub type VariableIndex = u64;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Variable {
-    symbol: String,
-    index: VariableIndex,
+    pub symbol: String,
+    pub index: VariableIndex,
 }
 
 impl Variable {
-    fn new(symbol: String, index: VariableIndex) -> Self {
-        Variable { symbol, index }
+    pub(crate) fn new(symbol: String) -> Self {
+        Variable { symbol, index: 0 }
     }
 }
 
+impl Visitable for Variable {}
+
 impl Expression for Variable {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = symbol().map(|output| Variable::new(output, 0));
+        let parser = symbol().map(|output| Variable::new(output));
         parser.parse(input)
     }
 }

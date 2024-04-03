@@ -1,9 +1,13 @@
 use crate::expression::variable::Variable;
 use crate::expression::{literal, Expression};
+use crate::visitor::{Visitable, Visitor};
 use f_prime_parser::combinators::between;
 use f_prime_parser::{Parser, ParserResult, PositionedBuffer, ThenParserExtensions};
 
-#[derive(Debug)]
+pub mod debruijn;
+pub mod pretty_print;
+
+#[derive(Debug, Eq, PartialEq)]
 pub enum UntypedTerm {
     Variable(Variable),
     Abstraction(Box<UntypedAbstraction>),
@@ -30,6 +34,8 @@ impl UntypedTerm {
     }
 }
 
+impl Visitable for UntypedTerm {}
+
 impl Expression for UntypedTerm {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = UntypedTerm::abstraction_parser()
@@ -40,11 +46,13 @@ impl Expression for UntypedTerm {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct UntypedAbstraction {
     parameter: Variable,
     body: UntypedTerm,
 }
+
+impl Visitable for UntypedAbstraction {}
 
 impl Expression for UntypedAbstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
@@ -59,11 +67,13 @@ impl Expression for UntypedAbstraction {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct UntypedApplication {
     applicator: UntypedTerm,
     argument: UntypedTerm,
 }
+
+impl Visitable for UntypedApplication {}
 
 impl Expression for UntypedApplication {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
@@ -90,14 +100,52 @@ impl Expression for UntypedApplication {
     }
 }
 
+pub trait UntypedTermVisitor
+where
+    Self: Visitor<Variable>
+        + Visitor<Box<UntypedAbstraction>>
+        + Visitor<Box<UntypedApplication>>
+        + Visitor<UntypedTerm>,
+{
+}
+
+impl<T> UntypedTermVisitor for T where
+    T: Visitor<Variable>
+        + Visitor<Box<UntypedAbstraction>>
+        + Visitor<Box<UntypedApplication>>
+        + Visitor<UntypedTerm>
+{
+}
+
+impl<T> Visitor<UntypedTerm> for T
+where
+    T: Visitor<Variable, Result = Variable>
+        + Visitor<Box<UntypedAbstraction>, Result = Box<UntypedAbstraction>>
+        + Visitor<Box<UntypedApplication>, Result = Box<UntypedApplication>>,
+{
+    type Result = UntypedTerm;
+
+    fn visit(&mut self, term: UntypedTerm) -> Self::Result {
+        match term {
+            UntypedTerm::Variable(variable) => UntypedTerm::Variable(self.visit(variable)),
+            UntypedTerm::Abstraction(abstraction) => {
+                UntypedTerm::Abstraction(self.visit(abstraction))
+            }
+            UntypedTerm::Application(application) => {
+                UntypedTerm::Application(self.visit(application))
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use f_prime_parser::PositionedBuffer;
 
     #[test]
-    fn test_application() {
-        let input = PositionedBuffer::new("λx. a (λt. b x t (f (λu. a u t z) λs. w)) w y");
+    fn test_parser() {
+        let input = PositionedBuffer::new("λs. λz. s z");
         let result = UntypedTerm::parse(input);
         dbg!(&result);
         assert!(result.unwrap().1.buffer.is_empty())
