@@ -116,8 +116,9 @@ impl Visitable for UntypedAbstraction {}
 
 impl Expression for UntypedAbstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = literal("@")
-            .or_else(literal("λ"))
+        let parser = literal("λ")
+            .or_else(literal("@"))
+            .or_else(literal("\\"))
             .skip_then(Variable::parser().at_least(1))
             .then_skip(literal("."))
             .then(UntypedTerm::parser())
