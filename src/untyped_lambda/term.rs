@@ -5,7 +5,6 @@ use f_prime_parser::combinators::between;
 use f_prime_parser::{Parser, ParserResult, PositionedBuffer, ThenParserExtensions};
 
 pub mod debruijn;
-pub mod pretty_print;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum UntypedTerm {
