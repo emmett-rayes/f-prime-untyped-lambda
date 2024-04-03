@@ -22,8 +22,9 @@ impl Visitor<Variable> for DeBruijnConverter {
 
     fn visit(&mut self, mut variable: Variable) -> Self::Result {
         if let Some(scopes) = self.variable_map.get(&variable.symbol) {
-            let binding_scope = *scopes.front().unwrap();
-            variable.index = self.current_scope - binding_scope + 1;
+            if let Some(binding_scope) = scopes.front() {
+                variable.index = self.current_scope - binding_scope + 1;
+            }
         }
         UntypedTerm::from(variable)
     }
