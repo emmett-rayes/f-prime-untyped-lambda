@@ -1,4 +1,5 @@
 use crate::expression::variable::{Variable, VariableIndex};
+use crate::untyped_lambda::term::term_helpers::replace_term;
 use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
 use crate::visitor::Visitor;
 use std::collections::{HashMap, LinkedList};
@@ -51,12 +52,6 @@ impl Visitor<UntypedApplication> for DeBruijnConverter {
         replace_term(&mut application.argument, |term| self.visit(term));
         UntypedTerm::from(application)
     }
-}
-
-fn replace_term(dst: &mut UntypedTerm, f: impl FnOnce(UntypedTerm) -> UntypedTerm) {
-    let dummy_term = UntypedTerm::from(Variable::new(""));
-    let term = std::mem::replace(dst, dummy_term);
-    let _ = std::mem::replace(dst, f(term));
 }
 
 #[cfg(test)]

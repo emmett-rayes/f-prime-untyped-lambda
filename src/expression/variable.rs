@@ -4,7 +4,7 @@ use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
 
 pub type VariableIndex = u64;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Variable {
     pub symbol: String,
     pub index: VariableIndex,

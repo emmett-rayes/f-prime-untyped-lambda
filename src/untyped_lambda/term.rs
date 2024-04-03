@@ -6,8 +6,9 @@ use f_prime_parser::{Parser, ParserResult, PositionedBuffer, ThenParserExtension
 
 pub mod de_bruijn;
 pub mod pretty_print;
+pub mod term_helpers;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum UntypedTerm {
     Variable(Variable),
     Abstraction(Box<UntypedAbstraction>),
@@ -15,6 +16,10 @@ pub enum UntypedTerm {
 }
 
 impl UntypedTerm {
+    pub fn is_value(&self) -> bool {
+        matches!(self, UntypedTerm::Abstraction(_))
+    }
+
     fn variable_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a {
         Variable::parser().map(UntypedTerm::from)
     }
@@ -88,10 +93,10 @@ impl Expression for UntypedTerm {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UntypedAbstraction {
-    parameter: Variable,
-    body: UntypedTerm,
+    pub parameter: Variable,
+    pub body: UntypedTerm,
 }
 
 impl UntypedAbstraction {
@@ -133,10 +138,10 @@ impl Expression for UntypedAbstraction {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UntypedApplication {
-    applicator: UntypedTerm,
-    argument: UntypedTerm,
+    pub applicator: UntypedTerm,
+    pub argument: UntypedTerm,
 }
 
 impl UntypedApplication {
