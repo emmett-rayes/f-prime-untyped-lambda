@@ -32,9 +32,12 @@ impl Visitor<Box<UntypedAbstraction>> for UntypedPrettyPrinter {
     type Result = String;
 
     fn visit(&mut self, abstraction: Box<UntypedAbstraction>) -> Self::Result {
+        let body_is_abstraction = matches!(abstraction.body, UntypedTerm::Abstraction(_));
         let body = self.visit(abstraction.body);
-        let body = if body.starts_with("(λ") {
-            body.strip_prefix("(").unwrap().strip_suffix(')').unwrap()
+        let body = if body_is_abstraction {
+            body.strip_prefix('(')
+                .and_then(|s| s.strip_suffix(')'))
+                .unwrap_or(body.as_str())
         } else {
             body.as_str()
         };
