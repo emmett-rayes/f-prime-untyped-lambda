@@ -1,6 +1,6 @@
 use crate::expression::Expression;
 
-mod by_value;
+pub mod by_value;
 mod shift;
 mod substitution;
 

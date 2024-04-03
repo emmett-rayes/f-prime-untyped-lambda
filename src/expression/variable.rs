@@ -1,6 +1,7 @@
+use crate::expression::buffer::PositionedBuffer;
 use crate::expression::{symbol, Expression};
 use crate::visitor::Visitable;
-use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
+use f_prime_parser::{Parser, ParserResult};
 
 pub type VariableIndex = u64;
 
@@ -31,7 +32,6 @@ impl Expression for Variable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use f_prime_parser::PositionedBuffer;
     use std::assert_matches::assert_matches;
 
     #[test]

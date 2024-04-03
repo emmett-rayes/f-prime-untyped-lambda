@@ -1,5 +1,7 @@
-use f_prime_parser::{Parser, ParserInput, ParserResult, PositionedBuffer};
+use crate::expression::buffer::PositionedBuffer;
+use f_prime_parser::{Parser, ParserInput, ParserResult};
 
+pub mod buffer;
 pub mod constant;
 pub mod variable;
 

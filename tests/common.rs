@@ -1,8 +1,8 @@
+use f_prime::expression::buffer::PositionedBuffer;
 use f_prime::expression::Expression;
 use f_prime::untyped_lambda::term::de_bruijn::DeBruijnConverter;
 use f_prime::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
 use f_prime::untyped_lambda::term::UntypedTerm;
-use f_prime_parser::PositionedBuffer;
 
 pub fn parse_untyped_term(input: &str) -> UntypedTerm {
     let input = PositionedBuffer::new(input);

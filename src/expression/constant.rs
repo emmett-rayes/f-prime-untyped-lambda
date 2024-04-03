@@ -1,6 +1,7 @@
+use crate::expression::buffer::PositionedBuffer;
 use crate::expression::{literal, Expression};
 use f_prime_parser::combinators::one_of;
-use f_prime_parser::{Parser, ParserResult, PositionedBuffer};
+use f_prime_parser::{Parser, ParserResult};
 use std::marker::PhantomData;
 
 #[derive(Debug)]
@@ -42,7 +43,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use f_prime_parser::PositionedBuffer;
+    use crate::expression::buffer::PositionedBuffer;
     use std::assert_matches::assert_matches;
 
     #[test]

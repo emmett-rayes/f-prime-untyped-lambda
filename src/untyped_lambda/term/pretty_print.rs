@@ -89,9 +89,9 @@ impl Visitor<UntypedApplication> for UntypedPrettyPrinter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::expression::buffer::PositionedBuffer;
     use crate::expression::Expression;
     use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
-    use f_prime_parser::PositionedBuffer;
 
     #[test]
     fn test_pretty_print_de_bruin() {
@@ -111,7 +111,7 @@ mod tests {
         let term = output.unwrap().0;
         assert_eq!(
             UntypedPrettyPrinter::format_de_bruijn(term),
-            "λ x. λ y. λ z. w x y z"
+            "λx. λy. λz. w x y z"
         );
     }
 

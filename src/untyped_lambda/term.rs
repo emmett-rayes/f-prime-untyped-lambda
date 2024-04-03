@@ -1,8 +1,9 @@
+use crate::expression::buffer::PositionedBuffer;
 use crate::expression::variable::Variable;
 use crate::expression::{literal, Expression};
 use crate::visitor::{Visitable, Visitor};
 use f_prime_parser::combinators::between;
-use f_prime_parser::{Parser, ParserResult, PositionedBuffer, ThenParserExtensions};
+use f_prime_parser::{Parser, ParserResult, ThenParserExtensions};
 
 pub mod de_bruijn;
 pub mod pretty_print;
@@ -220,7 +221,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use f_prime_parser::PositionedBuffer;
 
     #[test]
     fn test_parser() {

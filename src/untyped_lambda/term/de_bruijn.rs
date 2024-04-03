@@ -57,8 +57,8 @@ impl Visitor<UntypedApplication> for DeBruijnConverter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::expression::buffer::PositionedBuffer;
     use crate::expression::Expression;
-    use f_prime_parser::PositionedBuffer;
 
     #[test]
     fn test_de_bruijn() {

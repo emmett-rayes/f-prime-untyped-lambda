@@ -66,19 +66,19 @@ impl Visitor<UntypedApplication> for CallByValueEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::expression::buffer::PositionedBuffer;
     use crate::expression::Expression;
     use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
     use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
-    use f_prime_parser::PositionedBuffer;
 
     #[test]
-    fn test_parser() {
+    fn test_call_by_value() {
         let input = PositionedBuffer::new("(λx. x) (λx. y)");
         dbg!(&input.buffer);
         let output = UntypedTerm::parse(input);
         let term = DeBruijnConverter::convert(output.unwrap().0);
         let value = CallByValueEvaluator::reduce(term);
-        let result = UntypedPrettyPrinter::format_de_bruijn(value.unwrap());
+        let result = UntypedPrettyPrinter::format(value.unwrap());
         assert_eq!(result, "λx. y");
     }
 }
