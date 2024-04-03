@@ -42,9 +42,9 @@ impl Visitor<Box<UntypedAbstraction>> for UntypedPrettyPrinter {
             body.as_str()
         };
         if self.free_variables.remove(&abstraction.parameter.symbol) {
-            format!("(λ{}.{})", abstraction.parameter.symbol, body)
+            format!("(λ {}.{})", abstraction.parameter.symbol, body)
         } else {
-            format!("(λ{})", body)
+            format!("(λ {})", body)
         }
     }
 }
