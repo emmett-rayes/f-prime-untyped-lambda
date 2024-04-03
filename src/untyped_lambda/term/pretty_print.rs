@@ -74,18 +74,6 @@ impl Visitor<UntypedApplication> for UntypedPrettyPrinter {
     }
 }
 
-impl Visitor<UntypedTerm> for UntypedPrettyPrinter {
-    type Result = String;
-
-    fn visit(&mut self, term: UntypedTerm) -> Self::Result {
-        match term {
-            UntypedTerm::Variable(variable) => self.visit(variable),
-            UntypedTerm::Abstraction(abstraction) => self.visit(*abstraction),
-            UntypedTerm::Application(application) => self.visit(*application),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

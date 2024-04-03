@@ -2,7 +2,6 @@ use crate::expression::variable::{Variable, VariableIndex};
 use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
 use crate::visitor::Visitor;
 use std::collections::{HashMap, LinkedList};
-use std::ops::DerefMut;
 
 #[derive(Default)]
 pub struct DeBruijnConverter {
@@ -18,19 +17,19 @@ impl DeBruijnConverter {
 }
 
 impl Visitor<Variable> for DeBruijnConverter {
-    type Result = Variable;
+    type Result = UntypedTerm;
 
     fn visit(&mut self, mut variable: Variable) -> Self::Result {
         if let Some(scopes) = self.variable_map.get(&variable.symbol) {
             let binding_scope = *scopes.front().unwrap();
             variable.index = self.current_scope - binding_scope + 1;
         }
-        variable
+        UntypedTerm::from(variable)
     }
 }
 
 impl Visitor<UntypedAbstraction> for DeBruijnConverter {
-    type Result = UntypedAbstraction;
+    type Result = UntypedTerm;
 
     fn visit(&mut self, mut abstraction: UntypedAbstraction) -> Self::Result {
         self.current_scope += 1;
@@ -40,17 +39,17 @@ impl Visitor<UntypedAbstraction> for DeBruijnConverter {
             .push_front(self.current_scope);
         replace_term(&mut abstraction.body, |term| self.visit(term));
         self.current_scope -= 1;
-        abstraction
+        UntypedTerm::from(abstraction)
     }
 }
 
 impl Visitor<UntypedApplication> for DeBruijnConverter {
-    type Result = UntypedApplication;
+    type Result = UntypedTerm;
 
     fn visit(&mut self, mut application: UntypedApplication) -> Self::Result {
         replace_term(&mut application.applicator, |term| self.visit(term));
         replace_term(&mut application.argument, |term| self.visit(term));
-        application
+        UntypedTerm::from(application)
     }
 }
 

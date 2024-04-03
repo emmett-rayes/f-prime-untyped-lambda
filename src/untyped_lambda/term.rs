@@ -195,19 +195,19 @@ impl<T> UntypedTermVisitor for T where
 {
 }
 
-impl<T> Visitor<UntypedTerm> for T
+impl<T, R> Visitor<UntypedTerm> for T
 where
-    T: Visitor<Variable, Result = Variable>
-        + Visitor<UntypedAbstraction, Result = UntypedAbstraction>
-        + Visitor<UntypedApplication, Result = UntypedApplication>,
+    T: Visitor<Variable, Result = R>
+        + Visitor<UntypedAbstraction, Result = R>
+        + Visitor<UntypedApplication, Result = R>,
 {
-    type Result = UntypedTerm;
+    type Result = R;
 
     fn visit(&mut self, term: UntypedTerm) -> Self::Result {
         match term {
-            UntypedTerm::Variable(variable) => UntypedTerm::from(self.visit(variable)),
-            UntypedTerm::Abstraction(abstraction) => UntypedTerm::from(self.visit(*abstraction)),
-            UntypedTerm::Application(application) => UntypedTerm::from(self.visit(*application)),
+            UntypedTerm::Variable(variable) => self.visit(variable),
+            UntypedTerm::Abstraction(abstraction) => self.visit(*abstraction),
+            UntypedTerm::Application(application) => self.visit(*application),
         }
     }
 }
