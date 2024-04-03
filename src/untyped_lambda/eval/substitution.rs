@@ -41,9 +41,11 @@ impl Visitor<UntypedAbstraction> for DeBruijnSubstitution {
     fn visit(&mut self, mut abstraction: UntypedAbstraction) -> Self::Result {
         replace_term(&mut abstraction.body, move |term| {
             let shifted = DeBruijnShift::shift(1, self.replacement.clone());
+            self.target += 1;
             let replacement = std::mem::replace(&mut self.replacement, shifted);
             let body = self.visit(term);
             self.replacement = replacement;
+            self.target -= 1;
             body
         });
         UntypedTerm::from(abstraction)
