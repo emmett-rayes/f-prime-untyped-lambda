@@ -65,7 +65,7 @@ impl Visitor<UntypedTerm> for UntypedPrettyPrinter {
 mod tests {
     use super::*;
     use crate::expression::Expression;
-    use crate::untyped_lambda::term::debruijn::DeBruijnConverter;
+    use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
     use f_prime_parser::PositionedBuffer;
 
     #[test]

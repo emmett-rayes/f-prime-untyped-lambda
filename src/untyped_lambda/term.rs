@@ -4,7 +4,7 @@ use crate::visitor::{Visitable, Visitor};
 use f_prime_parser::combinators::between;
 use f_prime_parser::{Parser, ParserResult, PositionedBuffer, ThenParserExtensions};
 
-pub mod debruijn;
+pub mod de_bruijn;
 pub mod pretty_print;
 
 #[derive(Debug, Eq, PartialEq)]

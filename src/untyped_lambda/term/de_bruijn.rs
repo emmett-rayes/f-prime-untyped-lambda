@@ -68,7 +68,7 @@ mod tests {
     use f_prime_parser::PositionedBuffer;
 
     #[test]
-    fn test_debruijn() {
+    fn test_de_bruijn() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let result = UntypedTerm::parse(input);
         dbg!(DeBruijnConverter::convert(result.unwrap().0));
