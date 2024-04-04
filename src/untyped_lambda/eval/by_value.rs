@@ -50,9 +50,9 @@ impl Visitor<UntypedApplication> for CallByValueEvaluator {
             try_replace_term(&mut application.argument, |term| self.visit(term))?;
             Ok(UntypedTerm::from(application))
         } else {
-            let argument_shifted = DeBruijnShift::shift(1, application.argument);
             if let UntypedTerm::Abstraction(applicator) = application.applicator {
                 let target = 1;
+                let argument_shifted = DeBruijnShift::shift(1, application.argument);
                 let substituted =
                     DeBruijnSubstitution::substitute(target, argument_shifted, applicator.body);
                 Ok(DeBruijnShift::shift(-1, substituted))
