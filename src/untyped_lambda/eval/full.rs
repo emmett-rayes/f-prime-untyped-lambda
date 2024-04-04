@@ -6,24 +6,30 @@ use crate::untyped_lambda::term::term_helpers::try_replace_term;
 use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
 use crate::visitor::Visitor;
 
-pub struct CallByValueEvaluator;
+pub struct FullBetaEvaluator;
 
-impl BetaReduction<UntypedTerm> for CallByValueEvaluator {
+impl BetaReduction<UntypedTerm> for FullBetaEvaluator {
     fn reduce_once(term: UntypedTerm) -> Result<UntypedTerm, UntypedTerm> {
-        let mut visitor = CallByValueEvaluator;
+        let mut visitor = FullBetaEvaluator;
         visitor.visit(term)
     }
 
     fn reduce(mut term: UntypedTerm) -> Result<UntypedTerm, UntypedTerm> {
-        let mut visitor = CallByValueEvaluator;
-        while !term.is_value() {
-            term = visitor.visit(term)?
+        let mut visitor = FullBetaEvaluator;
+        let mut count = 0;
+        loop {
+            count += 1;
+            match visitor.visit(term) {
+                Ok(t) => {
+                    term = t;
+                }
+                Err(t) => return if count > 1 { Ok(t) } else { Err(t) },
+            }
         }
-        Ok(term)
     }
 }
 
-impl Visitor<Variable> for CallByValueEvaluator {
+impl Visitor<Variable> for FullBetaEvaluator {
     type Result = Result<UntypedTerm, UntypedTerm>;
 
     fn visit(&mut self, variable: Variable) -> Self::Result {
@@ -31,38 +37,38 @@ impl Visitor<Variable> for CallByValueEvaluator {
     }
 }
 
-impl Visitor<UntypedAbstraction> for CallByValueEvaluator {
+impl Visitor<UntypedAbstraction> for FullBetaEvaluator {
     type Result = Result<UntypedTerm, UntypedTerm>;
 
-    fn visit(&mut self, abstraction: UntypedAbstraction) -> Self::Result {
-        Err(UntypedTerm::from(abstraction))
+    fn visit(&mut self, mut abstraction: UntypedAbstraction) -> Self::Result {
+        if try_replace_term(&mut abstraction.body, |term| self.visit(term)) {
+            Ok(UntypedTerm::from(abstraction))
+        } else {
+            Err(UntypedTerm::from(abstraction))
+        }
     }
 }
 
-impl Visitor<UntypedApplication> for CallByValueEvaluator {
+impl Visitor<UntypedApplication> for FullBetaEvaluator {
     type Result = Result<UntypedTerm, UntypedTerm>;
 
     fn visit(&mut self, mut application: UntypedApplication) -> Self::Result {
-        if !application.applicator.is_value() {
-            if try_replace_term(&mut application.applicator, |term| self.visit(term)) {
-                Ok(UntypedTerm::from(application))
-            } else {
-                Err(UntypedTerm::from(application))
-            }
-        } else if !application.argument.is_value() {
-            if try_replace_term(&mut application.argument, |term| self.visit(term)) {
-                Ok(UntypedTerm::from(application))
-            } else {
-                Err(UntypedTerm::from(application))
-            }
-        } else if let UntypedTerm::Abstraction(applicator) = application.applicator {
-            let target = 1;
+        if try_replace_term(&mut application.applicator, |term| self.visit(term)) {
+            return Ok(UntypedTerm::from(application));
+        }
+
+        if try_replace_term(&mut application.argument, |term| self.visit(term)) {
+            return Ok(UntypedTerm::from(application));
+        }
+
+        if let UntypedTerm::Abstraction(applicator) = application.applicator {
             let argument_shifted = DeBruijnShift::shift(1, application.argument);
+            let target = 1;
             let substituted =
                 DeBruijnSubstitution::substitute(target, argument_shifted, applicator.body);
             Ok(DeBruijnShift::shift(-1, substituted))
         } else {
-            panic!("Applicator has to be an abstraction for call by value evaluation.")
+            Err(UntypedTerm::from(application))
         }
     }
 }
@@ -81,7 +87,7 @@ mod tests {
         dbg!(&input.buffer);
         let output = UntypedTerm::parse(input);
         let term = DeBruijnConverter::convert(output.unwrap().0);
-        let value = CallByValueEvaluator::reduce(term);
+        let value = FullBetaEvaluator::reduce(term);
         let result = UntypedPrettyPrinter::format(value.unwrap());
         assert_eq!(result, "λx. y");
     }
