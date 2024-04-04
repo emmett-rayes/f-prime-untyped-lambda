@@ -10,7 +10,7 @@ pub struct DeBruijnShift {
 
 impl DeBruijnShift {
     pub fn shift(place: i64, term: UntypedTerm) -> UntypedTerm {
-        let mut visitor = DeBruijnShift { place, cutoff: 0 };
+        let mut visitor = DeBruijnShift { place, cutoff: 1 };
         visitor.visit(term)
     }
 }
