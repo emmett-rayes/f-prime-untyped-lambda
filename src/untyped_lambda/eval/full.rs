@@ -1,34 +1,39 @@
 use crate::untyped_lambda::eval::by_value::CallByValueEvaluator;
-use crate::untyped_lambda::eval::BetaReduction;
+use crate::untyped_lambda::eval::TracingBetaReduction;
+use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
 use crate::untyped_lambda::term::UntypedTerm;
 use crate::visitor::Visitor;
 
 pub struct FullBetaEvaluator;
 
-impl BetaReduction<UntypedTerm> for FullBetaEvaluator {
-    fn reduce_once(term: &mut UntypedTerm) -> bool {
+impl TracingBetaReduction<UntypedTerm> for FullBetaEvaluator {
+    fn trace_once(term: &mut UntypedTerm) -> Option<String> {
         let mut visitor = CallByValueEvaluator::new(true);
-        visitor.visit(term)
+        if visitor.visit(term) {
+            Some(UntypedPrettyPrinter::format(term))
+        } else {
+            None
+        }
     }
 
-    fn reduce(term: &mut UntypedTerm) -> bool {
+    fn trace(term: &mut UntypedTerm) -> Vec<String> {
         let mut visitor = CallByValueEvaluator::new(true);
-        let mut count = 0;
+        let mut trace = Vec::new();
         while visitor.visit(term) {
-            count += 1;
+            trace.push(UntypedPrettyPrinter::format(term));
         }
-        count >= 1
+        trace
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::expression::buffer::PositionedBuffer;
     use crate::expression::Expression;
+    use crate::untyped_lambda::eval::BetaReduction;
     use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
     use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
-
-    use super::*;
 
     #[test]
     fn test_full_beta() {

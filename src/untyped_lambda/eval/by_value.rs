@@ -1,7 +1,8 @@
 use crate::expression::variable::Variable;
 use crate::untyped_lambda::eval::shift::DeBruijnShift;
 use crate::untyped_lambda::eval::substitution::DeBruijnSubstitution;
-use crate::untyped_lambda::eval::BetaReduction;
+use crate::untyped_lambda::eval::TracingBetaReduction;
+use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
 use crate::untyped_lambda::term::{UntypedAbstraction, UntypedTerm};
 use crate::visitor::Visitor;
 use std::ops::DerefMut;
@@ -17,20 +18,23 @@ impl CallByValueEvaluator {
     }
 }
 
-impl BetaReduction<UntypedTerm> for CallByValueEvaluator {
-    fn reduce_once(term: &mut UntypedTerm) -> bool {
+impl TracingBetaReduction<UntypedTerm> for CallByValueEvaluator {
+    fn trace_once(term: &mut UntypedTerm) -> Option<String> {
         let mut visitor = CallByValueEvaluator::default();
-        visitor.visit(term)
+        if visitor.visit(term) {
+            Some(UntypedPrettyPrinter::format(term))
+        } else {
+            None
+        }
     }
 
-    fn reduce(term: &mut UntypedTerm) -> bool {
+    fn trace(term: &mut UntypedTerm) -> Vec<String> {
         let mut visitor = CallByValueEvaluator::default();
-        while !term.is_value() {
-            if !visitor.visit(term) {
-                return false;
-            }
+        let mut trace = Vec::new();
+        while visitor.visit(term) {
+            trace.push(UntypedPrettyPrinter::format(term));
         }
-        true
+        trace
     }
 }
 
@@ -112,6 +116,7 @@ mod tests {
     use super::*;
     use crate::expression::buffer::PositionedBuffer;
     use crate::expression::Expression;
+    use crate::untyped_lambda::eval::BetaReduction;
     use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
     use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
 
