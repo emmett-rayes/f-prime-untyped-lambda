@@ -6,16 +6,25 @@ use crate::untyped_lambda::term::{UntypedAbstraction, UntypedTerm};
 use crate::visitor::Visitor;
 use std::ops::DerefMut;
 
-pub struct CallByValueEvaluator;
+#[derive(Default)]
+pub struct CallByValueEvaluator {
+    normalize: bool,
+}
+
+impl CallByValueEvaluator {
+    pub fn new(normalize: bool) -> Self {
+        Self { normalize }
+    }
+}
 
 impl BetaReduction<UntypedTerm> for CallByValueEvaluator {
     fn reduce_once(term: &mut UntypedTerm) -> bool {
-        let mut visitor = CallByValueEvaluator;
+        let mut visitor = CallByValueEvaluator::default();
         visitor.visit(term)
     }
 
     fn reduce(term: &mut UntypedTerm) -> bool {
-        let mut visitor = CallByValueEvaluator;
+        let mut visitor = CallByValueEvaluator::default();
         while !term.is_value() {
             if !visitor.visit(term) {
                 return false;
@@ -37,7 +46,7 @@ impl Visitor<UntypedAbstraction> for CallByValueEvaluator {
     type Result = bool;
 
     fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
-        false
+        self.normalize && self.visit(&mut abstraction.body)
     }
 }
 
@@ -51,14 +60,22 @@ impl Visitor<UntypedTerm> for CallByValueEvaluator {
             _ => {
                 if matches!(term, UntypedTerm::Application(_)) {
                     if let UntypedTerm::Application(application) = term {
-                        if self.visit(&mut application.applicator) {
+                        if (self.normalize || !application.applicator.is_value())
+                            && self.visit(&mut application.applicator)
+                        {
                             return true;
                         }
-                        if self.visit(&mut application.argument) {
+                        if (self.normalize || !application.argument.is_value())
+                            && self.visit(&mut application.argument)
+                        {
                             return true;
                         }
                         if !matches!(application.applicator, UntypedTerm::Abstraction(_)) {
-                            return false;
+                            if self.normalize {
+                                return false;
+                            } else {
+                                panic!("Applicator has to be an abstraction for call by value evaluation.");
+                            }
                         }
                     }
                     let dummy = UntypedTerm::Variable(Variable::new(""));
