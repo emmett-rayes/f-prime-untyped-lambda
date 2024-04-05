@@ -1,11 +1,9 @@
 use crate::expression::variable::Variable;
-use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
 use crate::untyped_lambda::term::{
     UntypedAbstraction, UntypedApplication, UntypedTerm, UntypedTermNonRewritingVisitor,
 };
 use crate::visitor::Visitor;
 use std::collections::HashSet;
-use std::ops::DerefMut;
 
 #[derive(Default)]
 pub struct UntypedPrettyPrinter {

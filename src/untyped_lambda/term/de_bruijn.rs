@@ -4,7 +4,6 @@ use crate::untyped_lambda::term::{
 };
 use crate::visitor::Visitor;
 use std::collections::{HashMap, LinkedList};
-use std::ops::DerefMut;
 
 #[derive(Default)]
 pub struct DeBruijnConverter {
