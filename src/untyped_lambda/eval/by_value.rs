@@ -2,67 +2,90 @@ use crate::expression::variable::Variable;
 use crate::untyped_lambda::eval::shift::DeBruijnShift;
 use crate::untyped_lambda::eval::substitution::DeBruijnSubstitution;
 use crate::untyped_lambda::eval::BetaReduction;
-use crate::untyped_lambda::term::term_helpers::try_replace_term;
-use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
+use crate::untyped_lambda::term::{UntypedAbstraction, UntypedTerm};
 use crate::visitor::Visitor;
+use std::ops::DerefMut;
 
 pub struct CallByValueEvaluator;
 
 impl BetaReduction<UntypedTerm> for CallByValueEvaluator {
-    fn reduce_once(term: UntypedTerm) -> Result<UntypedTerm, UntypedTerm> {
+    fn reduce_once(term: &mut UntypedTerm) -> bool {
         let mut visitor = CallByValueEvaluator;
         visitor.visit(term)
     }
 
-    fn reduce(mut term: UntypedTerm) -> Result<UntypedTerm, UntypedTerm> {
+    fn reduce(term: &mut UntypedTerm) -> bool {
         let mut visitor = CallByValueEvaluator;
         while !term.is_value() {
-            term = visitor.visit(term)?
+            if !visitor.visit(term) {
+                return false;
+            }
         }
-        Ok(term)
+        true
     }
 }
 
 impl Visitor<Variable> for CallByValueEvaluator {
-    type Result = Result<UntypedTerm, UntypedTerm>;
+    type Result = bool;
 
-    fn visit(&mut self, variable: Variable) -> Self::Result {
-        Err(UntypedTerm::from(variable))
+    fn visit(&mut self, _: &mut Variable) -> Self::Result {
+        false
     }
 }
 
 impl Visitor<UntypedAbstraction> for CallByValueEvaluator {
-    type Result = Result<UntypedTerm, UntypedTerm>;
+    type Result = bool;
 
-    fn visit(&mut self, abstraction: UntypedAbstraction) -> Self::Result {
-        Err(UntypedTerm::from(abstraction))
+    fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
+        false
     }
 }
 
-impl Visitor<UntypedApplication> for CallByValueEvaluator {
-    type Result = Result<UntypedTerm, UntypedTerm>;
+impl Visitor<UntypedTerm> for CallByValueEvaluator {
+    type Result = bool;
 
-    fn visit(&mut self, mut application: UntypedApplication) -> Self::Result {
-        if !application.applicator.is_value() {
-            if try_replace_term(&mut application.applicator, |term| self.visit(term)) {
-                Ok(UntypedTerm::from(application))
-            } else {
-                Err(UntypedTerm::from(application))
+    fn visit(&mut self, term: &mut UntypedTerm) -> Self::Result {
+        match term {
+            UntypedTerm::Variable(variable) => self.visit(variable),
+            UntypedTerm::Abstraction(abstraction) => self.visit(abstraction.deref_mut()),
+            _ => {
+                if matches!(term, UntypedTerm::Application(_)) {
+                    if let UntypedTerm::Application(application) = term {
+                        if self.visit(&mut application.applicator) {
+                            return true;
+                        }
+                        if self.visit(&mut application.argument) {
+                            return true;
+                        }
+                        if !matches!(application.applicator, UntypedTerm::Abstraction(_)) {
+                            return false;
+                        }
+                    }
+                    let dummy = UntypedTerm::Variable(Variable::new(""));
+                    let application = std::mem::replace(term, dummy);
+                    if let UntypedTerm::Application(mut application) = application {
+                        if self.visit(&mut application.applicator) {
+                            return true;
+                        }
+                        if self.visit(&mut application.argument) {
+                            return true;
+                        }
+                        if let UntypedTerm::Abstraction(mut applicator) = application.applicator {
+                            let target = 1;
+                            DeBruijnShift::shift(1, &mut application.argument);
+                            DeBruijnSubstitution::substitute(
+                                target,
+                                application.argument,
+                                &mut applicator.body,
+                            );
+                            DeBruijnShift::shift(-1, &mut applicator.body);
+                            *term = applicator.body;
+                            return true;
+                        }
+                    }
+                }
+                unreachable!()
             }
-        } else if !application.argument.is_value() {
-            if try_replace_term(&mut application.argument, |term| self.visit(term)) {
-                Ok(UntypedTerm::from(application))
-            } else {
-                Err(UntypedTerm::from(application))
-            }
-        } else if let UntypedTerm::Abstraction(applicator) = application.applicator {
-            let target = 1;
-            let argument_shifted = DeBruijnShift::shift(1, application.argument);
-            let substituted =
-                DeBruijnSubstitution::substitute(target, argument_shifted, applicator.body);
-            Ok(DeBruijnShift::shift(-1, substituted))
-        } else {
-            panic!("Applicator has to be an abstraction for call by value evaluation.")
         }
     }
 }
@@ -80,9 +103,11 @@ mod tests {
         let input = PositionedBuffer::new("(λx. x) (λx. y)");
         dbg!(&input.buffer);
         let output = UntypedTerm::parse(input);
-        let term = DeBruijnConverter::convert(output.unwrap().0);
-        let value = CallByValueEvaluator::reduce(term);
-        let result = UntypedPrettyPrinter::format(value.unwrap());
-        assert_eq!(result, "λx. y");
+        let mut term = output.unwrap().0;
+        DeBruijnConverter::convert(&mut term);
+        let result = CallByValueEvaluator::reduce(&mut term);
+        assert!(result);
+        let format = UntypedPrettyPrinter::format(&mut term);
+        assert_eq!(format, "λx. y");
     }
 }

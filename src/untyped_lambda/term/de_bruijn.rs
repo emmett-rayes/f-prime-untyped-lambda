@@ -1,8 +1,10 @@
 use crate::expression::variable::{Variable, VariableIndex};
-use crate::untyped_lambda::term::term_helpers::replace_term;
-use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
+use crate::untyped_lambda::term::{
+    UntypedAbstraction, UntypedApplication, UntypedTerm, UntypedTermNonRewritingVisitor,
+};
 use crate::visitor::Visitor;
 use std::collections::{HashMap, LinkedList};
+use std::ops::DerefMut;
 
 #[derive(Default)]
 pub struct DeBruijnConverter {
@@ -11,65 +13,65 @@ pub struct DeBruijnConverter {
 }
 
 impl DeBruijnConverter {
-    pub fn convert(term: UntypedTerm) -> UntypedTerm {
+    pub fn convert(term: &mut UntypedTerm) {
         let mut visitor = DeBruijnConverter::default();
-        visitor.visit(term)
+        visitor.visit(term);
     }
 }
 
-impl Visitor<Variable> for DeBruijnConverter {
-    type Result = UntypedTerm;
+impl UntypedTermNonRewritingVisitor for DeBruijnConverter {}
 
-    fn visit(&mut self, mut variable: Variable) -> Self::Result {
+impl Visitor<Variable> for DeBruijnConverter {
+    type Result = ();
+
+    fn visit(&mut self, variable: &mut Variable) -> Self::Result {
         if let Some(scopes) = self.variable_map.get(&variable.symbol) {
             if let Some(binding_scope) = scopes.front() {
                 variable.index = self.current_scope - binding_scope + 1;
             }
         }
-        UntypedTerm::from(variable)
     }
 }
 
 impl Visitor<UntypedAbstraction> for DeBruijnConverter {
-    type Result = UntypedTerm;
+    type Result = ();
 
-    fn visit(&mut self, mut abstraction: UntypedAbstraction) -> Self::Result {
+    fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
         self.current_scope += 1;
         self.variable_map
             .entry(abstraction.parameter.symbol.clone())
             .or_default()
             .push_front(self.current_scope);
-        replace_term(&mut abstraction.body, |term| self.visit(term));
+        self.visit(&mut abstraction.body);
         self.variable_map
             .get_mut(&abstraction.parameter.symbol.clone())
             .unwrap()
             .pop_front();
         self.current_scope -= 1;
-        UntypedTerm::from(abstraction)
     }
 }
 
 impl Visitor<UntypedApplication> for DeBruijnConverter {
-    type Result = UntypedTerm;
+    type Result = ();
 
-    fn visit(&mut self, mut application: UntypedApplication) -> Self::Result {
-        replace_term(&mut application.applicator, |term| self.visit(term));
-        replace_term(&mut application.argument, |term| self.visit(term));
-        UntypedTerm::from(application)
+    fn visit(&mut self, application: &mut UntypedApplication) -> Self::Result {
+        self.visit(&mut application.applicator);
+        self.visit(&mut application.argument);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::expression::buffer::PositionedBuffer;
     use crate::expression::Expression;
+
+    use super::*;
 
     #[test]
     fn test_de_bruijn() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
-        let term = output.unwrap().0;
+        let mut term = output.unwrap().0;
         let should = UntypedTerm::from(UntypedAbstraction::new(
             Variable::new("x"),
             UntypedTerm::from(UntypedAbstraction::new(
@@ -98,6 +100,7 @@ mod tests {
                 )),
             )),
         ));
-        assert_eq!(DeBruijnConverter::convert(term), should);
+        DeBruijnConverter::convert(&mut term);
+        assert_eq!(term, should);
     }
 }

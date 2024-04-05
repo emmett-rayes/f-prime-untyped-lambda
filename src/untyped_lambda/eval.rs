@@ -9,7 +9,7 @@ pub trait BetaReduction<T>
 where
     T: Expression,
 {
-    fn reduce_once(term: T) -> Result<T, T>;
+    fn reduce_once(term: &mut T) -> bool;
 
-    fn reduce(term: T) -> Result<T, T>;
+    fn reduce(term: &mut T) -> bool;
 }

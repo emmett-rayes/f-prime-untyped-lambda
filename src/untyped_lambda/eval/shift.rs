@@ -1,6 +1,7 @@
 use crate::expression::variable::Variable;
-use crate::untyped_lambda::term::term_helpers::replace_term;
-use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
+use crate::untyped_lambda::term::{
+    UntypedAbstraction, UntypedApplication, UntypedTerm, UntypedTermNonRewritingVisitor,
+};
 use crate::visitor::Visitor;
 
 pub struct DeBruijnShift {
@@ -9,41 +10,39 @@ pub struct DeBruijnShift {
 }
 
 impl DeBruijnShift {
-    pub fn shift(place: i64, term: UntypedTerm) -> UntypedTerm {
+    pub fn shift(place: i64, term: &mut UntypedTerm) {
         let mut visitor = DeBruijnShift { place, cutoff: 1 };
         visitor.visit(term)
     }
 }
 
-impl Visitor<Variable> for DeBruijnShift {
-    type Result = UntypedTerm;
+impl UntypedTermNonRewritingVisitor for DeBruijnShift {}
 
-    fn visit(&mut self, mut variable: Variable) -> Self::Result {
+impl Visitor<Variable> for DeBruijnShift {
+    type Result = ();
+
+    fn visit(&mut self, variable: &mut Variable) -> Self::Result {
         if variable.index >= self.cutoff {
             variable.index = variable.index.saturating_add_signed(self.place);
         }
-
-        UntypedTerm::from(variable)
     }
 }
 
 impl Visitor<UntypedAbstraction> for DeBruijnShift {
-    type Result = UntypedTerm;
+    type Result = ();
 
-    fn visit(&mut self, mut abstraction: UntypedAbstraction) -> Self::Result {
+    fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
         self.cutoff += 1;
-        replace_term(&mut abstraction.body, |term| self.visit(term));
+        self.visit(&mut abstraction.body);
         self.cutoff -= 1;
-        UntypedTerm::from(abstraction)
     }
 }
 
 impl Visitor<UntypedApplication> for DeBruijnShift {
-    type Result = UntypedTerm;
+    type Result = ();
 
-    fn visit(&mut self, mut application: UntypedApplication) -> Self::Result {
-        replace_term(&mut application.applicator, |term| self.visit(term));
-        replace_term(&mut application.argument, |term| self.visit(term));
-        UntypedTerm::from(application)
+    fn visit(&mut self, application: &mut UntypedApplication) -> Self::Result {
+        self.visit(&mut application.applicator);
+        self.visit(&mut application.argument);
     }
 }

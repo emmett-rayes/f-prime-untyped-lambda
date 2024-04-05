@@ -1,7 +1,11 @@
 use crate::expression::variable::Variable;
-use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
+use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
+use crate::untyped_lambda::term::{
+    UntypedAbstraction, UntypedApplication, UntypedTerm, UntypedTermNonRewritingVisitor,
+};
 use crate::visitor::Visitor;
 use std::collections::HashSet;
+use std::ops::DerefMut;
 
 #[derive(Default)]
 pub struct UntypedPrettyPrinter {
@@ -10,7 +14,7 @@ pub struct UntypedPrettyPrinter {
 }
 
 impl UntypedPrettyPrinter {
-    fn format_inner(term: UntypedTerm, de_bruijn: bool) -> String {
+    fn format_inner(term: &mut UntypedTerm, de_bruijn: bool) -> String {
         let term_is_abstraction = matches!(term, UntypedTerm::Abstraction(_));
         let mut visitor = UntypedPrettyPrinter {
             de_bruijn,
@@ -28,19 +32,21 @@ impl UntypedPrettyPrinter {
         }
     }
 
-    pub fn format(term: UntypedTerm) -> String {
+    pub fn format(term: &mut UntypedTerm) -> String {
         Self::format_inner(term, false)
     }
 
-    pub fn format_de_bruijn(term: UntypedTerm) -> String {
+    pub fn format_de_bruijn(term: &mut UntypedTerm) -> String {
         Self::format_inner(term, true)
     }
 }
 
+impl UntypedTermNonRewritingVisitor for UntypedPrettyPrinter {}
+
 impl Visitor<Variable> for UntypedPrettyPrinter {
     type Result = String;
 
-    fn visit(&mut self, variable: Variable) -> Self::Result {
+    fn visit(&mut self, variable: &mut Variable) -> Self::Result {
         if variable.index == 0 || !self.de_bruijn {
             self.free_variables.insert(variable.symbol.clone());
             variable.symbol.clone()
@@ -53,9 +59,9 @@ impl Visitor<Variable> for UntypedPrettyPrinter {
 impl Visitor<UntypedAbstraction> for UntypedPrettyPrinter {
     type Result = String;
 
-    fn visit(&mut self, abstraction: UntypedAbstraction) -> Self::Result {
+    fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
         let body_is_abstraction = matches!(abstraction.body, UntypedTerm::Abstraction(_));
-        let body = self.visit(abstraction.body);
+        let body = self.visit(&mut abstraction.body);
         let body = if body_is_abstraction {
             body.strip_prefix('(')
                 .and_then(|s| s.strip_suffix(')'))
@@ -74,10 +80,10 @@ impl Visitor<UntypedAbstraction> for UntypedPrettyPrinter {
 impl Visitor<UntypedApplication> for UntypedPrettyPrinter {
     type Result = String;
 
-    fn visit(&mut self, application: UntypedApplication) -> Self::Result {
+    fn visit(&mut self, application: &mut UntypedApplication) -> Self::Result {
         let argument_is_application = matches!(application.argument, UntypedTerm::Application(_));
-        let applicator = self.visit(application.applicator);
-        let argument = self.visit(application.argument);
+        let applicator = self.visit(&mut application.applicator);
+        let argument = self.visit(&mut application.argument);
         if argument_is_application {
             format!("{} ({})", applicator, argument,)
         } else {
@@ -97,9 +103,10 @@ mod tests {
     fn test_pretty_print_de_bruin() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
-        let term = DeBruijnConverter::convert(output.unwrap().0);
+        let mut term = output.unwrap().0;
+        DeBruijnConverter::convert(&mut term);
         assert_eq!(
-            UntypedPrettyPrinter::format_de_bruijn(term),
+            UntypedPrettyPrinter::format_de_bruijn(&mut term),
             "λ λ λ w 3 2 1"
         );
     }
@@ -108,9 +115,9 @@ mod tests {
     fn test_pretty_print_symbolic() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
         let output = UntypedTerm::parse(input);
-        let term = output.unwrap().0;
+        let mut term = output.unwrap().0;
         assert_eq!(
-            UntypedPrettyPrinter::format_de_bruijn(term),
+            UntypedPrettyPrinter::format_de_bruijn(&mut term),
             "λx. λy. λz. w x y z"
         );
     }
@@ -119,9 +126,10 @@ mod tests {
     fn test_associativity() {
         let input = PositionedBuffer::new("λx y z.x z (y z)");
         let output = UntypedTerm::parse(input);
-        let term = DeBruijnConverter::convert(output.unwrap().0);
+        let mut term = output.unwrap().0;
+        DeBruijnConverter::convert(&mut term);
         assert_eq!(
-            UntypedPrettyPrinter::format_de_bruijn(term),
+            UntypedPrettyPrinter::format_de_bruijn(&mut term),
             "λ λ λ 3 1 (2 1)"
         );
     }

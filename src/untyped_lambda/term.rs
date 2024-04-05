@@ -4,10 +4,10 @@ use crate::expression::{literal, Expression};
 use crate::visitor::{Visitable, Visitor};
 use f_prime_parser::combinators::between;
 use f_prime_parser::{Parser, ParserResult, ThenParserExtensions};
+use std::ops::DerefMut;
 
 pub mod de_bruijn;
 pub mod pretty_print;
-pub mod term_helpers;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum UntypedTerm {
@@ -201,19 +201,22 @@ impl<T> UntypedTermVisitor for T where
 {
 }
 
+pub trait UntypedTermNonRewritingVisitor {}
+
 impl<T, R> Visitor<UntypedTerm> for T
 where
-    T: Visitor<Variable, Result = R>
+    T: UntypedTermNonRewritingVisitor
+        + Visitor<Variable, Result = R>
         + Visitor<UntypedAbstraction, Result = R>
         + Visitor<UntypedApplication, Result = R>,
 {
     type Result = R;
 
-    fn visit(&mut self, term: UntypedTerm) -> Self::Result {
+    fn visit(&mut self, term: &mut UntypedTerm) -> Self::Result {
         match term {
             UntypedTerm::Variable(variable) => self.visit(variable),
-            UntypedTerm::Abstraction(abstraction) => self.visit(*abstraction),
-            UntypedTerm::Application(application) => self.visit(*application),
+            UntypedTerm::Abstraction(abstraction) => self.visit(abstraction.deref_mut()),
+            UntypedTerm::Application(application) => self.visit(application.deref_mut()),
         }
     }
 }

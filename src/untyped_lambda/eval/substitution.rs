@@ -1,8 +1,8 @@
-use crate::expression::variable::{Variable, VariableIndex};
+use crate::expression::variable::VariableIndex;
 use crate::untyped_lambda::eval::shift::DeBruijnShift;
-use crate::untyped_lambda::term::term_helpers::replace_term;
 use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
 use crate::visitor::Visitor;
+use std::ops::DerefMut;
 
 pub struct DeBruijnSubstitution {
     target: VariableIndex,
@@ -10,56 +10,49 @@ pub struct DeBruijnSubstitution {
 }
 
 impl DeBruijnSubstitution {
-    pub fn substitute(
-        target: VariableIndex,
-        replacement: UntypedTerm,
-        term: UntypedTerm,
-    ) -> UntypedTerm {
+    pub fn substitute(target: VariableIndex, replacement: UntypedTerm, term: &mut UntypedTerm) {
         let mut visitor = DeBruijnSubstitution {
             target,
             replacement,
         };
-        visitor.visit(term)
+        visitor.visit(term);
     }
 }
 
-impl Visitor<Variable> for DeBruijnSubstitution {
-    type Result = UntypedTerm;
+impl Visitor<UntypedTerm> for DeBruijnSubstitution {
+    type Result = ();
 
-    fn visit(&mut self, variable: Variable) -> Self::Result {
-        if variable.index == self.target {
-            self.replacement.clone()
-        } else {
-            UntypedTerm::from(variable)
+    fn visit(&mut self, term: &mut UntypedTerm) -> Self::Result {
+        match term {
+            UntypedTerm::Variable(variable) => {
+                if variable.index == self.target {
+                    *term = self.replacement.clone();
+                }
+            }
+            UntypedTerm::Abstraction(abstraction) => self.visit(abstraction.deref_mut()),
+            UntypedTerm::Application(application) => self.visit(application.deref_mut()),
         }
     }
 }
 
 impl Visitor<UntypedAbstraction> for DeBruijnSubstitution {
-    type Result = UntypedTerm;
+    type Result = ();
 
-    fn visit(&mut self, mut abstraction: UntypedAbstraction) -> Self::Result {
-        replace_term(&mut abstraction.body, move |term| {
-            let shifted = DeBruijnShift::shift(1, self.replacement.clone());
-            self.target += 1;
-            let replacement = std::mem::replace(&mut self.replacement, shifted);
-            let body = self.visit(term);
-            self.replacement = replacement;
-            self.target -= 1;
-            body
-        });
-        UntypedTerm::from(abstraction)
+    fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
+        let replacement = self.replacement.clone();
+        DeBruijnShift::shift(1, &mut self.replacement);
+        self.target += 1;
+        self.visit(&mut abstraction.body);
+        self.replacement = replacement;
+        self.target -= 1;
     }
 }
 
 impl Visitor<UntypedApplication> for DeBruijnSubstitution {
-    type Result = UntypedTerm;
+    type Result = ();
 
-    fn visit(&mut self, mut application: UntypedApplication) -> Self::Result {
-        replace_term(&mut application.applicator, |term| self.visit(term));
-        replace_term(&mut application.argument, |term| self.visit(term));
-        UntypedTerm::from(application)
+    fn visit(&mut self, application: &mut UntypedApplication) -> Self::Result {
+        self.visit(&mut application.applicator);
+        self.visit(&mut application.argument);
     }
 }
-
-//
