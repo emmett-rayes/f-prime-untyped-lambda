@@ -61,51 +61,46 @@ impl Visitor<UntypedTerm> for CallByValueEvaluator {
         match term {
             UntypedTerm::Variable(variable) => self.visit(variable),
             UntypedTerm::Abstraction(abstraction) => self.visit(abstraction.deref_mut()),
-            _ => {
-                if matches!(term, UntypedTerm::Application(_)) {
-                    if let UntypedTerm::Application(application) = term {
-                        if (self.normalize || !application.applicator.is_value())
-                            && self.visit(&mut application.applicator)
-                        {
-                            return true;
-                        }
-                        if (self.normalize || !application.argument.is_value())
-                            && self.visit(&mut application.argument)
-                        {
-                            return true;
-                        }
-                        if !matches!(application.applicator, UntypedTerm::Abstraction(_)) {
-                            if self.normalize {
-                                return false;
-                            } else {
-                                panic!("Applicator has to be an abstraction for call by value evaluation.");
-                            }
-                        }
-                    }
-                    let dummy = UntypedTerm::Variable(Variable::new(""));
-                    let application = std::mem::replace(term, dummy);
-                    if let UntypedTerm::Application(mut application) = application {
-                        if self.visit(&mut application.applicator) {
-                            return true;
-                        }
-                        if self.visit(&mut application.argument) {
-                            return true;
-                        }
-                        if let UntypedTerm::Abstraction(mut applicator) = application.applicator {
-                            let target = 1;
-                            DeBruijnShift::shift(1, &mut application.argument);
-                            DeBruijnSubstitution::substitute(
-                                target,
-                                application.argument,
-                                &mut applicator.body,
-                            );
-                            DeBruijnShift::shift(-1, &mut applicator.body);
-                            *term = applicator.body;
-                            return true;
-                        }
-                    }
+            UntypedTerm::Application(application) => {
+                if (self.normalize || !application.applicator.is_value())
+                    && self.visit(&mut application.applicator)
+                {
+                    return true;
                 }
-                unreachable!()
+                if (self.normalize || !application.argument.is_value())
+                    && self.visit(&mut application.argument)
+                {
+                    return true;
+                }
+                if !matches!(application.applicator, UntypedTerm::Abstraction(_)) {
+                    return false;
+                }
+                let dummy = UntypedTerm::Variable(Variable::new(""));
+                let application = std::mem::replace(term, dummy);
+                if let UntypedTerm::Application(mut application) = application {
+                    if self.visit(&mut application.applicator) {
+                        return true;
+                    }
+                    if self.visit(&mut application.argument) {
+                        return true;
+                    }
+                    if let UntypedTerm::Abstraction(mut applicator) = application.applicator {
+                        let target = 1;
+                        DeBruijnShift::shift(1, &mut application.argument);
+                        DeBruijnSubstitution::substitute(
+                            target,
+                            application.argument,
+                            &mut applicator.body,
+                        );
+                        DeBruijnShift::shift(-1, &mut applicator.body);
+                        *term = applicator.body;
+                        return true;
+                    } else {
+                        unreachable!()
+                    }
+                } else {
+                    unreachable!()
+                }
             }
         }
     }
