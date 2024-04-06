@@ -1,6 +1,6 @@
 use crate::expression::variable::Variable;
 use crate::untyped_lambda::term::{
-    UntypedAbstraction, UntypedApplication, UntypedTerm, UntypedTermNonRewritingVisitor,
+    StructurePreservingUntypedTermVisitor, UntypedAbstraction, UntypedApplication, UntypedTerm,
 };
 use crate::visitor::Visitor;
 use std::collections::HashSet;
@@ -39,7 +39,7 @@ impl UntypedPrettyPrinter {
     }
 }
 
-impl UntypedTermNonRewritingVisitor for UntypedPrettyPrinter {}
+impl StructurePreservingUntypedTermVisitor for UntypedPrettyPrinter {}
 
 impl Visitor<Variable> for UntypedPrettyPrinter {
     type Result = String;

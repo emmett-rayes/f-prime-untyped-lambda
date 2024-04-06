@@ -1,6 +1,6 @@
 use crate::expression::variable::{Variable, VariableIndex};
 use crate::untyped_lambda::term::{
-    UntypedAbstraction, UntypedApplication, UntypedTerm, UntypedTermNonRewritingVisitor,
+    StructurePreservingUntypedTermVisitor, UntypedAbstraction, UntypedApplication, UntypedTerm,
 };
 use crate::visitor::Visitor;
 use std::collections::{HashMap, LinkedList};
@@ -17,7 +17,7 @@ impl DeBruijnConverter {
     }
 }
 
-impl UntypedTermNonRewritingVisitor for DeBruijnConverter {}
+impl StructurePreservingUntypedTermVisitor for DeBruijnConverter {}
 
 impl Visitor<Variable> for DeBruijnConverter {
     type Result = ();

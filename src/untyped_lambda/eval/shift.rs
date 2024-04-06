@@ -1,6 +1,6 @@
 use crate::expression::variable::Variable;
 use crate::untyped_lambda::term::{
-    UntypedAbstraction, UntypedApplication, UntypedTerm, UntypedTermNonRewritingVisitor,
+    StructurePreservingUntypedTermVisitor, UntypedAbstraction, UntypedApplication, UntypedTerm,
 };
 use crate::visitor::Visitor;
 
@@ -15,7 +15,7 @@ impl DeBruijnShift {
     }
 }
 
-impl UntypedTermNonRewritingVisitor for DeBruijnShift {}
+impl StructurePreservingUntypedTermVisitor for DeBruijnShift {}
 
 impl Visitor<Variable> for DeBruijnShift {
     type Result = ();

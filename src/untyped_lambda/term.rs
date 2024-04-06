@@ -178,11 +178,11 @@ impl Expression for UntypedApplication {
     }
 }
 
-pub trait UntypedTermNonRewritingVisitor {}
+pub trait StructurePreservingUntypedTermVisitor {}
 
 impl<V, C, R> Visitor<UntypedTerm> for V
 where
-    V: UntypedTermNonRewritingVisitor
+    V: StructurePreservingUntypedTermVisitor
         + Visitor<Variable, Context = C, Result = R>
         + Visitor<UntypedAbstraction, Context = C, Result = R>
         + Visitor<UntypedApplication, Context = C, Result = R>,
