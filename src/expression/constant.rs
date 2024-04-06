@@ -3,20 +3,20 @@ use std::marker::PhantomData;
 use f_prime_parser::combinators::one_of;
 use f_prime_parser::{Parser, ParserResult};
 
-use crate::expression::buffer::PositionedBuffer;
-use crate::expression::symbol::literal_parser;
 use crate::expression::buffer::Parsable;
+use crate::expression::buffer::PositionedBuffer;
+use crate::expression::symbol::{literal_parser, Symbol};
 
 #[derive(Debug)]
 pub struct Constant<T> {
-    symbol: String,
+    symbol: Symbol,
     constants: PhantomData<T>,
 }
 
-impl<T> Constant<T> {
-    pub fn new(symbol: &str) -> Self {
+impl<T> From<Symbol> for Constant<T> {
+    fn from(value: Symbol) -> Self {
         Constant {
-            symbol: symbol.to_string(),
+            symbol: value,
             constants: PhantomData,
         }
     }
@@ -37,7 +37,7 @@ where
                 .map(|constant| literal_parser(constant).boxed())
                 .collect(),
         )
-        .map(Constant::new);
+        .map(Constant::from);
 
         parser.parse(input)
     }

@@ -1,11 +1,11 @@
 use f_prime_parser::{Parser, ParserResult};
 
+use crate::expression::buffer::Parsable;
 use crate::expression::buffer::PositionedBuffer;
 use crate::expression::symbol::{symbol_parser, Symbol};
-use crate::expression::buffer::Parsable;
 
 pub type DeBruijnIndex = u64;
-#[derive(Copy,Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct IndexedVariable {
     pub index: DeBruijnIndex,
 }
@@ -15,8 +15,8 @@ pub struct NamedVariable {
     pub symbol: Symbol,
 }
 
-impl From<String> for NamedVariable {
-    fn from(value: String) -> Self {
+impl From<Symbol> for NamedVariable {
+    fn from(value: Symbol) -> Self {
         NamedVariable { symbol: value }
     }
 }

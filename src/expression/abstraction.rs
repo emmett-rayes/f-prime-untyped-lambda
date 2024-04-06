@@ -1,9 +1,9 @@
 use f_prime_parser::{Parser, ParserResult, ThenParserExtensions};
 
 use crate::expression::buffer::{Parsable, PositionedBuffer};
-use crate::expression::Expression;
 use crate::expression::symbol::literal_parser;
 use crate::expression::variable::Variable;
+use crate::expression::Expression;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Abstraction {
@@ -21,7 +21,7 @@ impl Parsable for Abstraction {
             .then(Expression::parser())
             .map(|(parameters, body)| {
                 parameters.into_iter().rfold(body, |body, parameter| {
-                    Expression::from(Abstraction { parameter, body})
+                    Expression::from(Abstraction { parameter, body })
                 })
             })
             .map(|expr| Abstraction::try_from(expr).unwrap());
@@ -36,8 +36,7 @@ impl TryFrom<Expression> for Abstraction {
     fn try_from(value: Expression) -> Result<Self, Self::Error> {
         if let Expression::Abstraction(abstraction) = value {
             Ok(*abstraction)
-        }
-        else {
+        } else {
             Err(())
         }
     }

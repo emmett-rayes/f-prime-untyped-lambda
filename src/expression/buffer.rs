@@ -1,11 +1,14 @@
 use f_prime_parser::{Parser, ParserError, ParserInput, ParserResult};
 
-pub trait Parsable {
+pub trait Parsable
+where
+    Self: Sized,
+{
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self>;
 
     fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-        where
-            Self: 'a,
+    where
+        Self: 'a,
     {
         Self::parse
     }

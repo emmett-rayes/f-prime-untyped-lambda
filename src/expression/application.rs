@@ -15,7 +15,10 @@ impl Parsable for Application {
             expressions
                 .into_iter()
                 .reduce(|applicator, argument| {
-                    Expression::from(Application::new(applicator, argument))
+                    Expression::from(Application {
+                        applicator,
+                        argument,
+                    })
                 })
                 .map(|expr| Application::try_from(expr).unwrap())
                 .unwrap()
@@ -31,8 +34,7 @@ impl TryFrom<Expression> for Application {
     fn try_from(value: Expression) -> Result<Self, Self::Error> {
         if let Expression::Application(application) = value {
             Ok(*application)
-        }
-        else {
+        } else {
             Err(())
         }
     }
