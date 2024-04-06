@@ -8,6 +8,8 @@ edition = "2021"
 authors = ["Emmett Rayes <emmett.rayes@icloud.com>"]
 repository = "https://github.com/emmett-rayes/f-prime"
 readme = "README.md"
+license = "MIT"
+license-file = "LICENSE"
 
 [dependencies]
 f_prime_parser = {path = "parser"}
