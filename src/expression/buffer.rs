@@ -1,4 +1,15 @@
-use f_prime_parser::{ParserError, ParserInput};
+use f_prime_parser::{Parser, ParserError, ParserInput, ParserResult};
+
+pub trait Parsable {
+    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self>;
+
+    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
+        where
+            Self: 'a,
+    {
+        Self::parse
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct PositionedBuffer<'a> {

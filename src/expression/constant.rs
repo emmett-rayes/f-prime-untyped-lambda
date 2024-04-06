@@ -1,8 +1,11 @@
-use crate::lang::expr::buffer::PositionedBuffer;
-use crate::lang::expr::{literal, Expression};
+use std::marker::PhantomData;
+
 use f_prime_parser::combinators::one_of;
 use f_prime_parser::{Parser, ParserResult};
-use std::marker::PhantomData;
+
+use crate::expression::buffer::PositionedBuffer;
+use crate::expression::symbol::literal_parser;
+use crate::expression::buffer::Parsable;
 
 #[derive(Debug)]
 pub struct Constant<T> {
@@ -23,7 +26,7 @@ pub trait DefinedConstants {
     const CHOICES: &'static [&'static str];
 }
 
-impl<CONSTANTS> Expression for Constant<CONSTANTS>
+impl<CONSTANTS> Parsable for Constant<CONSTANTS>
 where
     CONSTANTS: DefinedConstants,
 {
@@ -31,7 +34,7 @@ where
         let parser = one_of(
             CONSTANTS::CHOICES
                 .iter()
-                .map(|constant| literal(constant).boxed())
+                .map(|constant| literal_parser(constant).boxed())
                 .collect(),
         )
         .map(Constant::new);
@@ -42,8 +45,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::assert_matches::assert_matches;
+
+    use super::*;
 
     #[test]
     fn test_constant() {

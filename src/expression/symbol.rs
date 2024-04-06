@@ -1,25 +1,10 @@
-use buffer::PositionedBuffer;
 use f_prime_parser::{Parser, ParserInput, ParserResult};
 
-pub mod buffer;
-pub mod constant;
-pub mod variable;
+use crate::expression::buffer::PositionedBuffer;
 
-pub trait Expression
-where
-    Self: Sized,
-{
-    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self>;
+pub type Symbol = String;
 
-    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-    where
-        Self: 'a,
-    {
-        Self::parse
-    }
-}
-
-fn parse_symbol(input: PositionedBuffer) -> ParserResult<PositionedBuffer, &str> {
+fn parse_symbol(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Symbol> {
     let input = input.seek_whitespace();
     let mut chars = input.buffer.chars();
 
@@ -37,39 +22,43 @@ fn parse_symbol(input: PositionedBuffer) -> ParserResult<PositionedBuffer, &str>
         }
     }
 
-    Ok((&input.buffer[0..matched], input.seek(matched)))
+    Ok((input.buffer[0..matched].to_string(), input.seek(matched)))
 }
 
-pub fn symbol<'a>() -> impl Parser<PositionedBuffer<'a>, Output = &'a str> + 'a {
+pub fn symbol_parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Symbol> + 'a {
     parse_symbol
 }
 
 pub fn parse_literal<'a>(
     expected: &str,
     input: PositionedBuffer<'a>,
-) -> ParserResult<PositionedBuffer<'a>, &'a str> {
+) -> ParserResult<PositionedBuffer<'a>, Symbol> {
     let input = input.seek_whitespace();
     if input.buffer.starts_with(expected) {
-        Ok((&input.buffer[0..expected.len()], input.seek(expected.len())))
+        Ok((
+            input.buffer[0..expected.len()].to_string(),
+            input.seek(expected.len()),
+        ))
     } else {
         Err(input.error(format!("Expected '{expected}' at this position.")))
     }
 }
 
-pub fn literal<'a>(
+pub fn literal_parser<'a>(
     expected: &'static str,
-) -> impl Parser<PositionedBuffer<'a>, Output = &'a str> + 'a {
+) -> impl Parser<PositionedBuffer<'a>, Output = Symbol> + 'a {
     move |input: PositionedBuffer<'a>| parse_literal(expected, input)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::assert_matches::assert_matches;
+
+    use super::*;
 
     #[test]
     fn test_literal() {
-        let literal_parser = literal("hello");
+        let literal_parser = literal_parser("hello");
 
         let input = PositionedBuffer::new("hello, world!");
         assert_matches!(
