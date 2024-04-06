@@ -11,7 +11,7 @@ pub struct Variable {
 }
 
 impl Variable {
-    pub(crate) fn new(symbol: &str) -> Self {
+    pub fn new(symbol: &str) -> Self {
         Variable {
             symbol: symbol.to_string(),
             index: 0,
