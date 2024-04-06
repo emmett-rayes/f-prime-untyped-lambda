@@ -5,7 +5,7 @@ use crate::expression::symbol::{symbol_parser, Symbol};
 use crate::expression::buffer::Parsable;
 
 pub type DeBruijnIndex = u64;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Copy,Clone, Debug, Eq, PartialEq)]
 pub struct IndexedVariable {
     pub index: DeBruijnIndex,
 }
@@ -24,6 +24,19 @@ impl From<String> for NamedVariable {
 impl Parsable for NamedVariable {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = symbol_parser().map(NamedVariable::from);
+        parser.parse(input)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Variable {
+    Indexed(IndexedVariable),
+    Named(NamedVariable),
+}
+
+impl Parsable for Variable {
+    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
+        let parser = NamedVariable::parser().map(Variable::Named);
         parser.parse(input)
     }
 }
