@@ -1,5 +1,5 @@
-use crate::expression::variable::Variable;
-use crate::untyped_lambda::term::{
+use crate::lang::expr::variable::Variable;
+use crate::term::untyped::{
     StructurePreservingUntypedTermVisitor, UntypedAbstraction, UntypedApplication, UntypedTerm,
 };
 use crate::visitor::Visitor;

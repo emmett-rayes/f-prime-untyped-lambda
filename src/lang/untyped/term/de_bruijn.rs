@@ -1,5 +1,5 @@
-use crate::expression::variable::{Variable, VariableIndex};
-use crate::untyped_lambda::term::{
+use crate::lang::expr::variable::{Variable, VariableIndex};
+use crate::term::untyped::{
     StructurePreservingUntypedTermVisitor, UntypedAbstraction, UntypedApplication, UntypedTerm,
 };
 use crate::visitor::Visitor;
@@ -70,10 +70,10 @@ impl Visitor<UntypedApplication> for DeBruijnConverter {
 
 #[cfg(test)]
 mod tests {
-    use crate::expression::buffer::PositionedBuffer;
-    use crate::expression::Expression;
-
     use super::*;
+    use crate::expr::buffer::PositionedBuffer;
+    use crate::expr::Expression;
+    use crate::term::untyped::UntypedAbstraction;
 
     #[test]
     fn test_de_bruijn() {

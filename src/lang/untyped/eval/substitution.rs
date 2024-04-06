@@ -1,6 +1,6 @@
-use crate::expression::variable::VariableIndex;
-use crate::untyped_lambda::eval::shift::DeBruijnShift;
-use crate::untyped_lambda::term::{UntypedAbstraction, UntypedApplication, UntypedTerm};
+use crate::eval::untyped::shift::DeBruijnShift;
+use crate::lang::expr::variable::VariableIndex;
+use crate::term::untyped::{UntypedAbstraction, UntypedApplication, UntypedTerm};
 use crate::visitor::Visitor;
 use std::ops::DerefMut;
 

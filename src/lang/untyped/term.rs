@@ -1,6 +1,6 @@
-use crate::expression::buffer::PositionedBuffer;
-use crate::expression::variable::Variable;
-use crate::expression::{literal, Expression};
+use crate::expr::buffer::PositionedBuffer;
+use crate::lang::expr::variable::Variable;
+use crate::lang::expr::{literal, Expression};
 use crate::visitor::Visitor;
 use f_prime_parser::combinators::between;
 use f_prime_parser::{Parser, ParserResult, ThenParserExtensions};

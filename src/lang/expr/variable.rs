@@ -1,5 +1,5 @@
-use crate::expression::buffer::PositionedBuffer;
-use crate::expression::{symbol, Expression};
+use crate::lang::expr::buffer::PositionedBuffer;
+use crate::lang::expr::{symbol, Expression};
 use f_prime_parser::{Parser, ParserResult};
 
 pub type VariableIndex = u64;

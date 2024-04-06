@@ -1,9 +1,9 @@
-use crate::expression::variable::Variable;
-use crate::untyped_lambda::eval::shift::DeBruijnShift;
-use crate::untyped_lambda::eval::substitution::DeBruijnSubstitution;
-use crate::untyped_lambda::eval::TracingBetaReduction;
-use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
-use crate::untyped_lambda::term::{UntypedAbstraction, UntypedTerm};
+use crate::eval::untyped::shift::DeBruijnShift;
+use crate::eval::untyped::substitution::DeBruijnSubstitution;
+use crate::eval::untyped::TracingBetaReduction;
+use crate::lang::expr::variable::Variable;
+use crate::term::untyped::pretty_print::UntypedPrettyPrinter;
+use crate::term::untyped::{UntypedAbstraction, UntypedTerm};
 use crate::visitor::Visitor;
 use std::ops::DerefMut;
 
@@ -118,11 +118,10 @@ impl Visitor<UntypedTerm> for CallByValueEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expression::buffer::PositionedBuffer;
-    use crate::expression::Expression;
-    use crate::untyped_lambda::eval::BetaReduction;
-    use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
-    use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
+    use crate::eval::untyped::BetaReduction;
+    use crate::expr::buffer::PositionedBuffer;
+    use crate::expr::Expression;
+    use crate::term::untyped::de_bruijn::DeBruijnConverter;
 
     #[test]
     fn test_call_by_value() {

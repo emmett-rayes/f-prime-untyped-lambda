@@ -1,5 +1,5 @@
-use crate::expression::variable::Variable;
-use crate::untyped_lambda::term::{
+use crate::lang::expr::variable::Variable;
+use crate::term::untyped::{
     StructurePreservingUntypedTermVisitor, UntypedAbstraction, UntypedApplication, UntypedTerm,
 };
 use crate::visitor::Visitor;
@@ -104,9 +104,9 @@ impl Visitor<UntypedApplication> for UntypedPrettyPrinter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expression::buffer::PositionedBuffer;
-    use crate::expression::Expression;
-    use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
+    use crate::expr::buffer::PositionedBuffer;
+    use crate::expr::Expression;
+    use crate::term::untyped::de_bruijn::DeBruijnConverter;
 
     #[test]
     fn test_pretty_print_de_bruin() {

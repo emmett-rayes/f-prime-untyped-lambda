@@ -1,4 +1,4 @@
-use crate::expression::buffer::PositionedBuffer;
+use buffer::PositionedBuffer;
 use f_prime_parser::{Parser, ParserInput, ParserResult};
 
 pub mod buffer;

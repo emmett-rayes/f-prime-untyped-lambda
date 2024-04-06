@@ -1,7 +1,7 @@
-use crate::untyped_lambda::eval::by_value::CallByValueEvaluator;
-use crate::untyped_lambda::eval::TracingBetaReduction;
-use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
-use crate::untyped_lambda::term::UntypedTerm;
+use crate::eval::untyped::by_value::CallByValueEvaluator;
+use crate::eval::untyped::TracingBetaReduction;
+use crate::term::untyped::pretty_print::UntypedPrettyPrinter;
+use crate::term::untyped::UntypedTerm;
 use crate::visitor::Visitor;
 
 pub struct FullBetaEvaluator;
@@ -29,11 +29,10 @@ impl TracingBetaReduction<UntypedTerm> for FullBetaEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expression::buffer::PositionedBuffer;
-    use crate::expression::Expression;
-    use crate::untyped_lambda::eval::BetaReduction;
-    use crate::untyped_lambda::term::de_bruijn::DeBruijnConverter;
-    use crate::untyped_lambda::term::pretty_print::UntypedPrettyPrinter;
+    use crate::eval::untyped::BetaReduction;
+    use crate::expr::buffer::PositionedBuffer;
+    use crate::expr::Expression;
+    use crate::term::untyped::de_bruijn::DeBruijnConverter;
 
     #[test]
     fn test_full_beta() {

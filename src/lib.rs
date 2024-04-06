@@ -1,5 +1,8 @@
 #![feature(assert_matches)]
 
-pub mod expression;
-pub mod untyped_lambda;
-pub mod visitor;
+mod lang;
+mod visitor;
+
+pub mod eval;
+pub mod expr;
+pub mod term;
