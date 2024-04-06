@@ -18,7 +18,7 @@ impl UntypedPrettyPrinter {
             de_bruijn,
             ..Default::default()
         };
-        let string = visitor.visit(term);
+        let string = visitor.visit((), term);
         if term_is_abstraction {
             string
                 .strip_prefix('(')
@@ -43,8 +43,9 @@ impl UntypedTermNonRewritingVisitor for UntypedPrettyPrinter {}
 
 impl Visitor<Variable> for UntypedPrettyPrinter {
     type Result = String;
+    type Context = ();
 
-    fn visit(&mut self, variable: &mut Variable) -> Self::Result {
+    fn visit(&mut self, _: Self::Context, variable: &mut Variable) -> Self::Result {
         if variable.index == 0 || !self.de_bruijn {
             self.free_variables.insert(variable.symbol.clone());
             variable.symbol.clone()
@@ -56,10 +57,15 @@ impl Visitor<Variable> for UntypedPrettyPrinter {
 
 impl Visitor<UntypedAbstraction> for UntypedPrettyPrinter {
     type Result = String;
+    type Context = ();
 
-    fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
+    fn visit(
+        &mut self,
+        empty_context: Self::Context,
+        abstraction: &mut UntypedAbstraction,
+    ) -> Self::Result {
         let body_is_abstraction = matches!(abstraction.body, UntypedTerm::Abstraction(_));
-        let body = self.visit(&mut abstraction.body);
+        let body = self.visit(empty_context, &mut abstraction.body);
         let body = if body_is_abstraction {
             body.strip_prefix('(')
                 .and_then(|s| s.strip_suffix(')'))
@@ -77,11 +83,16 @@ impl Visitor<UntypedAbstraction> for UntypedPrettyPrinter {
 
 impl Visitor<UntypedApplication> for UntypedPrettyPrinter {
     type Result = String;
+    type Context = ();
 
-    fn visit(&mut self, application: &mut UntypedApplication) -> Self::Result {
+    fn visit(
+        &mut self,
+        empty_context: Self::Context,
+        application: &mut UntypedApplication,
+    ) -> Self::Result {
         let argument_is_application = matches!(application.argument, UntypedTerm::Application(_));
-        let applicator = self.visit(&mut application.applicator);
-        let argument = self.visit(&mut application.argument);
+        let applicator = self.visit(empty_context, &mut application.applicator);
+        let argument = self.visit(empty_context, &mut application.argument);
         if argument_is_application {
             format!("{} ({})", applicator, argument,)
         } else {

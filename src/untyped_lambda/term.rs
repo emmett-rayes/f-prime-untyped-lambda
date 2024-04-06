@@ -1,7 +1,7 @@
 use crate::expression::buffer::PositionedBuffer;
 use crate::expression::variable::Variable;
 use crate::expression::{literal, Expression};
-use crate::visitor::{Visitable, Visitor};
+use crate::visitor::Visitor;
 use f_prime_parser::combinators::between;
 use f_prime_parser::{Parser, ParserResult, ThenParserExtensions};
 use std::ops::DerefMut;
@@ -82,8 +82,6 @@ impl TryFrom<UntypedTerm> for Variable {
     }
 }
 
-impl Visitable for UntypedTerm {}
-
 impl Expression for UntypedTerm {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = UntypedTerm::abstraction_parser()
@@ -117,8 +115,6 @@ impl TryFrom<UntypedTerm> for UntypedAbstraction {
         }
     }
 }
-
-impl Visitable for UntypedAbstraction {}
 
 impl Expression for UntypedAbstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
@@ -166,8 +162,6 @@ impl TryFrom<UntypedTerm> for UntypedApplication {
     }
 }
 
-impl Visitable for UntypedApplication {}
-
 impl Expression for UntypedApplication {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = UntypedTerm::atom_parser().at_least(2).map(|terms| {
@@ -184,39 +178,23 @@ impl Expression for UntypedApplication {
     }
 }
 
-pub trait UntypedTermVisitor
-where
-    Self: Visitor<Variable>
-        + Visitor<UntypedAbstraction>
-        + Visitor<UntypedApplication>
-        + Visitor<UntypedTerm>,
-{
-}
-
-impl<T> UntypedTermVisitor for T where
-    T: Visitor<Variable>
-        + Visitor<UntypedAbstraction>
-        + Visitor<UntypedApplication>
-        + Visitor<UntypedTerm>
-{
-}
-
 pub trait UntypedTermNonRewritingVisitor {}
 
-impl<T, R> Visitor<UntypedTerm> for T
+impl<V, C, R> Visitor<UntypedTerm> for V
 where
-    T: UntypedTermNonRewritingVisitor
-        + Visitor<Variable, Result = R>
-        + Visitor<UntypedAbstraction, Result = R>
-        + Visitor<UntypedApplication, Result = R>,
+    V: UntypedTermNonRewritingVisitor
+        + Visitor<Variable, Context = C, Result = R>
+        + Visitor<UntypedAbstraction, Context = C, Result = R>
+        + Visitor<UntypedApplication, Context = C, Result = R>,
 {
     type Result = R;
+    type Context = C;
 
-    fn visit(&mut self, term: &mut UntypedTerm) -> Self::Result {
+    fn visit(&mut self, context: Self::Context, term: &mut UntypedTerm) -> Self::Result {
         match term {
-            UntypedTerm::Variable(variable) => self.visit(variable),
-            UntypedTerm::Abstraction(abstraction) => self.visit(abstraction.deref_mut()),
-            UntypedTerm::Application(application) => self.visit(application.deref_mut()),
+            UntypedTerm::Variable(variable) => self.visit(context, variable),
+            UntypedTerm::Abstraction(abstraction) => self.visit(context, abstraction.deref_mut()),
+            UntypedTerm::Application(application) => self.visit(context, application.deref_mut()),
         }
     }
 }

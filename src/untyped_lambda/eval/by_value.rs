@@ -21,7 +21,7 @@ impl CallByValueEvaluator {
 impl TracingBetaReduction<UntypedTerm> for CallByValueEvaluator {
     fn trace_once(term: &mut UntypedTerm) -> Option<String> {
         let mut visitor = CallByValueEvaluator::default();
-        if visitor.visit(term) {
+        if visitor.visit((), term) {
             Some(UntypedPrettyPrinter::format(term))
         } else {
             None
@@ -31,7 +31,7 @@ impl TracingBetaReduction<UntypedTerm> for CallByValueEvaluator {
     fn trace(term: &mut UntypedTerm) -> Vec<String> {
         let mut visitor = CallByValueEvaluator::default();
         let mut trace = Vec::new();
-        while visitor.visit(term) {
+        while visitor.visit((), term) {
             trace.push(UntypedPrettyPrinter::format(term));
         }
         trace
@@ -40,35 +40,44 @@ impl TracingBetaReduction<UntypedTerm> for CallByValueEvaluator {
 
 impl Visitor<Variable> for CallByValueEvaluator {
     type Result = bool;
+    type Context = ();
 
-    fn visit(&mut self, _: &mut Variable) -> Self::Result {
+    fn visit(&mut self, _: Self::Context, _: &mut Variable) -> Self::Result {
         false
     }
 }
 
 impl Visitor<UntypedAbstraction> for CallByValueEvaluator {
     type Result = bool;
+    type Context = ();
 
-    fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
-        self.normalize && self.visit(&mut abstraction.body)
+    fn visit(
+        &mut self,
+        empty_context: Self::Context,
+        abstraction: &mut UntypedAbstraction,
+    ) -> Self::Result {
+        self.normalize && self.visit(empty_context, &mut abstraction.body)
     }
 }
 
 impl Visitor<UntypedTerm> for CallByValueEvaluator {
     type Result = bool;
+    type Context = ();
 
-    fn visit(&mut self, term: &mut UntypedTerm) -> Self::Result {
+    fn visit(&mut self, empty_context: Self::Context, term: &mut UntypedTerm) -> Self::Result {
         match term {
-            UntypedTerm::Variable(variable) => self.visit(variable),
-            UntypedTerm::Abstraction(abstraction) => self.visit(abstraction.deref_mut()),
+            UntypedTerm::Variable(variable) => self.visit(empty_context, variable),
+            UntypedTerm::Abstraction(abstraction) => {
+                self.visit(empty_context, abstraction.deref_mut())
+            }
             UntypedTerm::Application(application) => {
                 if (self.normalize || !application.applicator.is_value())
-                    && self.visit(&mut application.applicator)
+                    && self.visit(empty_context, &mut application.applicator)
                 {
                     return true;
                 }
                 if (self.normalize || !application.argument.is_value())
-                    && self.visit(&mut application.argument)
+                    && self.visit(empty_context, &mut application.argument)
                 {
                     return true;
                 }
@@ -78,10 +87,10 @@ impl Visitor<UntypedTerm> for CallByValueEvaluator {
                 let dummy = UntypedTerm::Variable(Variable::new(""));
                 let application = std::mem::replace(term, dummy);
                 if let UntypedTerm::Application(mut application) = application {
-                    if self.visit(&mut application.applicator) {
+                    if self.visit(empty_context, &mut application.applicator) {
                         return true;
                     }
-                    if self.visit(&mut application.argument) {
+                    if self.visit(empty_context, &mut application.argument) {
                         return true;
                     }
                     if let UntypedTerm::Abstraction(mut applicator) = application.applicator {

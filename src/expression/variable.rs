@@ -1,6 +1,5 @@
 use crate::expression::buffer::PositionedBuffer;
 use crate::expression::{symbol, Expression};
-use crate::visitor::Visitable;
 use f_prime_parser::{Parser, ParserResult};
 
 pub type VariableIndex = u64;
@@ -19,8 +18,6 @@ impl Variable {
         }
     }
 }
-
-impl Visitable for Variable {}
 
 impl Expression for Variable {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {

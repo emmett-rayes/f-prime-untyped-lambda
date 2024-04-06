@@ -7,14 +7,13 @@ use std::collections::{HashMap, LinkedList};
 
 #[derive(Default)]
 pub struct DeBruijnConverter {
-    current_scope: VariableIndex,
     variable_map: HashMap<String, LinkedList<VariableIndex>>,
 }
 
 impl DeBruijnConverter {
     pub fn convert(term: &mut UntypedTerm) {
         let mut visitor = DeBruijnConverter::default();
-        visitor.visit(term);
+        visitor.visit(0, term);
     }
 }
 
@@ -22,11 +21,12 @@ impl UntypedTermNonRewritingVisitor for DeBruijnConverter {}
 
 impl Visitor<Variable> for DeBruijnConverter {
     type Result = ();
+    type Context = VariableIndex;
 
-    fn visit(&mut self, variable: &mut Variable) -> Self::Result {
+    fn visit(&mut self, current_scope: Self::Context, variable: &mut Variable) -> Self::Result {
         if let Some(scopes) = self.variable_map.get(&variable.symbol) {
             if let Some(binding_scope) = scopes.front() {
-                variable.index = self.current_scope - binding_scope + 1;
+                variable.index = current_scope - binding_scope + 1;
             }
         }
     }
@@ -34,28 +34,37 @@ impl Visitor<Variable> for DeBruijnConverter {
 
 impl Visitor<UntypedAbstraction> for DeBruijnConverter {
     type Result = ();
+    type Context = VariableIndex;
 
-    fn visit(&mut self, abstraction: &mut UntypedAbstraction) -> Self::Result {
-        self.current_scope += 1;
+    fn visit(
+        &mut self,
+        mut current_scope: Self::Context,
+        abstraction: &mut UntypedAbstraction,
+    ) -> Self::Result {
+        current_scope += 1;
         self.variable_map
             .entry(abstraction.parameter.symbol.clone())
             .or_default()
-            .push_front(self.current_scope);
-        self.visit(&mut abstraction.body);
+            .push_front(current_scope);
+        self.visit(current_scope, &mut abstraction.body);
         self.variable_map
             .get_mut(&abstraction.parameter.symbol.clone())
             .unwrap()
             .pop_front();
-        self.current_scope -= 1;
     }
 }
 
 impl Visitor<UntypedApplication> for DeBruijnConverter {
     type Result = ();
+    type Context = VariableIndex;
 
-    fn visit(&mut self, application: &mut UntypedApplication) -> Self::Result {
-        self.visit(&mut application.applicator);
-        self.visit(&mut application.argument);
+    fn visit(
+        &mut self,
+        current_scope: Self::Context,
+        application: &mut UntypedApplication,
+    ) -> Self::Result {
+        self.visit(current_scope, &mut application.applicator);
+        self.visit(current_scope, &mut application.argument);
     }
 }
 

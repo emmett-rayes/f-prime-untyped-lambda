@@ -9,7 +9,7 @@ pub struct FullBetaEvaluator;
 impl TracingBetaReduction<UntypedTerm> for FullBetaEvaluator {
     fn trace_once(term: &mut UntypedTerm) -> Option<String> {
         let mut visitor = CallByValueEvaluator::new(true);
-        if visitor.visit(term) {
+        if visitor.visit((), term) {
             Some(UntypedPrettyPrinter::format(term))
         } else {
             None
@@ -19,7 +19,7 @@ impl TracingBetaReduction<UntypedTerm> for FullBetaEvaluator {
     fn trace(term: &mut UntypedTerm) -> Vec<String> {
         let mut visitor = CallByValueEvaluator::new(true);
         let mut trace = Vec::new();
-        while visitor.visit(term) {
+        while visitor.visit((), term) {
             trace.push(UntypedPrettyPrinter::format(term));
         }
         trace
