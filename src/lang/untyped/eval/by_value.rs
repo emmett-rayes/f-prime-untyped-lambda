@@ -1,6 +1,6 @@
 use crate::eval::untyped::shift::DeBruijnShift;
 use crate::eval::untyped::substitution::DeBruijnSubstitution;
-use crate::eval::untyped::TracingBetaReduction;
+use crate::eval::TracingBetaReduction;
 use crate::lang::expr::variable::Variable;
 use crate::term::untyped::pretty_print::UntypedPrettyPrinter;
 use crate::term::untyped::{UntypedAbstraction, UntypedTerm};
@@ -118,7 +118,7 @@ impl Visitor<UntypedTerm> for CallByValueEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::eval::untyped::BetaReduction;
+    use crate::eval::BetaReduction;
     use crate::expr::buffer::PositionedBuffer;
     use crate::expr::Expression;
     use crate::term::untyped::de_bruijn::DeBruijnConverter;

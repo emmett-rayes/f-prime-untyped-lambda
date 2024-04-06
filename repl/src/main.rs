@@ -1,5 +1,5 @@
 use f_prime::eval::untyped::full::FullBetaEvaluator;
-use f_prime::eval::untyped::TracingBetaReduction;
+use f_prime::eval::TracingBetaReduction;
 use f_prime::expr::buffer::PositionedBuffer;
 use f_prime::expr::Expression;
 use f_prime::term::untyped::de_bruijn::DeBruijnConverter;

@@ -1,5 +1,5 @@
 use crate::eval::untyped::by_value::CallByValueEvaluator;
-use crate::eval::untyped::TracingBetaReduction;
+use crate::eval::TracingBetaReduction;
 use crate::term::untyped::pretty_print::UntypedPrettyPrinter;
 use crate::term::untyped::UntypedTerm;
 use crate::visitor::Visitor;
@@ -29,7 +29,7 @@ impl TracingBetaReduction<UntypedTerm> for FullBetaEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::eval::untyped::BetaReduction;
+    use crate::eval::BetaReduction;
     use crate::expr::buffer::PositionedBuffer;
     use crate::expr::Expression;
     use crate::term::untyped::de_bruijn::DeBruijnConverter;
