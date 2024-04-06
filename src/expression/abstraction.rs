@@ -1,4 +1,5 @@
 use f_prime_parser::{Parser, ParserResult, ThenParserExtensions};
+
 use crate::expression::buffer::{Parsable, PositionedBuffer};
 use crate::expression::Expression;
 use crate::expression::symbol::literal_parser;
@@ -10,7 +11,7 @@ pub struct Abstraction {
     pub body: Expression,
 }
 
-impl Parsable for crate::term::untyped::UntypedAbstraction {
+impl Parsable for Abstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = literal_parser("λ")
             .or_else(literal_parser("@"))
@@ -23,8 +24,21 @@ impl Parsable for crate::term::untyped::UntypedAbstraction {
                     Expression::from(Abstraction { parameter, body})
                 })
             })
-            .map(|term| crate::term::untyped::UntypedAbstraction::try_from(term).unwrap());
+            .map(|expr| Abstraction::try_from(expr).unwrap());
 
         parser.parse(input)
+    }
+}
+
+impl TryFrom<Expression> for Abstraction {
+    type Error = ();
+
+    fn try_from(value: Expression) -> Result<Self, Self::Error> {
+        if let Expression::Abstraction(abstraction) = value {
+            Ok(*abstraction)
+        }
+        else {
+            Err(())
+        }
     }
 }
