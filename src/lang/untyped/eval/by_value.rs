@@ -1,4 +1,5 @@
 use crate::eval::BetaReduction;
+use crate::expression::abstraction::{Abstraction, TypedAbstraction};
 use crate::expression::variable::Variable;
 use crate::expression::Expression;
 use crate::term::untyped::UntypedLambdaTerm;
@@ -25,9 +26,10 @@ impl CallByValueEvaluator {
     fn traverse(&mut self, expression: &mut Expression) -> bool {
         match expression {
             Expression::Variable(_) => false,
-            Expression::Abstraction(abstraction) => {
-                self.normalize && self.traverse(&mut abstraction.body)
-            }
+            Expression::Abstraction(box Abstraction { parameter, body })
+            | Expression::TypedAbstraction(box TypedAbstraction {
+                parameter, body, ..
+            }) => self.normalize && self.traverse(body),
             Expression::Application(application) => {
                 if (self.normalize || !application.applicator.is_value())
                     && self.traverse(&mut application.applicator)
@@ -69,7 +71,6 @@ impl CallByValueEvaluator {
                     unreachable!()
                 }
             }
-            _ => unimplemented!(),
         }
     }
 }
