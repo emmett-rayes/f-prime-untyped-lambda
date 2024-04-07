@@ -56,7 +56,6 @@ mod tests {
         let input = PositionedBuffer::new("(λx. x w (λy. y x w))");
         let (mut expression, _) = Expression::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
-        dbg!(ExpressionPrettyPrinter::format_indexed(&mut expression));
         DeBruijnShift::shift(2, &mut expression);
         let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
         assert_eq!(pretty, "λ 1 4 (λ 1 2 5)");
