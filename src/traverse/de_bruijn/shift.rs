@@ -29,6 +29,7 @@ impl DeBruijnShift {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use crate::expression::buffer::{Parsable, PositionedBuffer};
     use crate::traverse::de_bruijn::convert::DeBruijnConverter;

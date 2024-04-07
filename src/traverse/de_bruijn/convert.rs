@@ -55,6 +55,7 @@ impl DeBruijnConverter {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use crate::expression::buffer::{Parsable, PositionedBuffer};
     use crate::traverse::pretty_print::ExpressionPrettyPrinter;
