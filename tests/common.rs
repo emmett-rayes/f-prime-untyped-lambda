@@ -14,7 +14,7 @@ pub fn convert_de_bruijn(expression: &mut Expression) {
 }
 
 pub fn pretty_print_expression(term: &mut Expression) -> String {
-    ExpressionPrettyPrinter::format_de_bruijn(term)
+    ExpressionPrettyPrinter::format_indexed(term)
 }
 
 pub fn process_untyped(input: &str) -> String {

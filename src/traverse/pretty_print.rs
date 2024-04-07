@@ -4,7 +4,7 @@ use crate::expression::Expression;
 
 #[derive(Default)]
 pub struct ExpressionPrettyPrinter {
-    de_bruijn: bool,
+    indexed_variables: bool,
     free_variables: HashSet<String>,
 }
 
@@ -13,14 +13,14 @@ impl ExpressionPrettyPrinter {
         Self::format_inner(expression, false)
     }
 
-    pub fn format_de_bruijn(expression: &mut Expression) -> String {
+    pub fn format_indexed(expression: &mut Expression) -> String {
         Self::format_inner(expression, true)
     }
 
-    fn format_inner(expression: &mut Expression, de_bruijn: bool) -> String {
+    fn format_inner(expression: &mut Expression, indexed_variables: bool) -> String {
         let expression_is_abstraction = matches!(expression, Expression::Abstraction(_));
         let mut printer = ExpressionPrettyPrinter {
-            de_bruijn,
+            indexed_variables,
             ..Default::default()
         };
         let string = printer.traverse(expression);
@@ -38,7 +38,7 @@ impl ExpressionPrettyPrinter {
     fn traverse(&mut self, expression: &mut Expression) -> String {
         match expression {
             Expression::Variable(variable) => {
-                if variable.index == 0 || !self.de_bruijn {
+                if variable.index == 0 || !self.indexed_variables {
                     self.free_variables.insert(variable.symbol.clone());
                     variable.symbol.clone()
                 } else {
@@ -55,7 +55,9 @@ impl ExpressionPrettyPrinter {
                 } else {
                     body.as_str()
                 };
-                if !self.de_bruijn || self.free_variables.remove(&abstraction.parameter.symbol) {
+                if !self.indexed_variables
+                    || self.free_variables.remove(&abstraction.parameter.symbol)
+                {
                     format!("(λ{}. {})", abstraction.parameter.symbol, body)
                 } else {
                     format!("(λ {})", body)
@@ -85,37 +87,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_pretty_print_de_bruin() {
+    fn test_pretty_print() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let output = Expression::parse(input);
-        let mut expression = output.unwrap().0;
+        let (mut expression, _) = Expression::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
-        assert_eq!(
-            ExpressionPrettyPrinter::format_de_bruijn(&mut expression),
-            "λ λ λ w 3 2 1"
-        );
+        let pretty = ExpressionPrettyPrinter::format(&mut expression);
+        assert_eq!(pretty, "λx. λy. λz. w x y z");
     }
 
     #[test]
-    fn test_pretty_print_symbolic() {
+    fn test_pretty_print_indexed() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let output = Expression::parse(input);
-        let mut expression = output.unwrap().0;
-        assert_eq!(
-            ExpressionPrettyPrinter::format_de_bruijn(&mut expression),
-            "λx. λy. λz. w x y z"
-        );
+        let (mut expression, _) = Expression::parse(input).unwrap();
+        DeBruijnConverter::convert(&mut expression);
+        let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
+        assert_eq!(pretty, "λ λ λ w 3 2 1");
     }
 
     #[test]
     fn test_associativity() {
         let input = PositionedBuffer::new("λx y z.x z (y z)");
-        let output = Expression::parse(input);
-        let mut expression = output.unwrap().0;
+        let (mut expression, _) = Expression::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
-        assert_eq!(
-            ExpressionPrettyPrinter::format_de_bruijn(&mut expression),
-            "λ λ λ 3 1 (2 1)"
-        );
+        let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
+        assert_eq!(pretty, "λ λ λ 3 1 (2 1)");
     }
 }
