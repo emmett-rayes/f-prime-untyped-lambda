@@ -35,7 +35,7 @@ where
 {
     fn trace_once(term: &mut T) -> Option<String> {
         if Self::reduce_once(term) {
-            Some(ExpressionPrettyPrinter::format_named(term.as_expr()))
+            Some(ExpressionPrettyPrinter::format_named(term.as_expr_mut()))
         } else {
             None
         }

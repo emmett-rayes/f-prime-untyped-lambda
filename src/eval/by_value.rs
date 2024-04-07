@@ -77,6 +77,6 @@ impl CallByValueEvaluator {
 
 impl BetaReduction<UntypedLambdaTerm> for CallByValueEvaluator {
     fn reduce_once(term: &mut UntypedLambdaTerm) -> bool {
-        Self::evaluate(term.as_expr())
+        Self::evaluate(term.as_expr_mut())
     }
 }

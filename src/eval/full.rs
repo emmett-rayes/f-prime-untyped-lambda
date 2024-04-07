@@ -7,7 +7,7 @@ pub struct FullBetaEvaluator;
 
 impl BetaReduction<UntypedLambdaTerm> for FullBetaEvaluator {
     fn reduce_once(term: &mut UntypedLambdaTerm) -> bool {
-        CallByValueEvaluator::normalize(term.as_expr())
+        CallByValueEvaluator::normalize(term.as_expr_mut())
     }
 }
 
@@ -29,7 +29,7 @@ mod tests {
         let mut term = UntypedLambdaTerm::new(expression);
         let result = FullBetaEvaluator::reduce(&mut term);
         assert!(result);
-        let format = ExpressionPrettyPrinter::format_named(term.as_expr());
+        let format = ExpressionPrettyPrinter::format_named(term.as_expr_mut());
         assert_eq!(format, "λs. λz. s z");
     }
 }
