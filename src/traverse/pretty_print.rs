@@ -13,23 +13,23 @@ pub struct ExpressionPrettyPrinter {
 }
 
 impl ExpressionPrettyPrinter {
-    pub fn format_named(expression: &mut Expression) -> String {
+    pub fn format_named(expression: &Expression) -> String {
         Self::format_inner(expression, PrinterMode::Named)
     }
 
-    pub fn format_indexed(expression: &mut Expression) -> String {
+    pub fn format_indexed(expression: &Expression) -> String {
         Self::format_inner(expression, PrinterMode::Indexed)
     }
 
-    pub fn format_nameless_locals(expression: &mut Expression) -> String {
+    pub fn format_nameless_locals(expression: &Expression) -> String {
         Self::format_inner(expression, PrinterMode::NamelessLocals)
     }
 
-    pub fn format(expression: &mut Expression) -> String {
+    pub fn format(expression: &Expression) -> String {
         Self::format_named(expression)
     }
 
-    fn format_inner(expression: &mut Expression, mode: PrinterMode) -> String {
+    fn format_inner(expression: &Expression, mode: PrinterMode) -> String {
         let expression_is_abstraction = matches!(
             expression,
             Expression::Abstraction(_) | Expression::TypedAbstraction(_)
@@ -47,11 +47,11 @@ impl ExpressionPrettyPrinter {
         }
     }
 
-    fn traverse(&mut self, expression: &mut Expression, current_scope: DeBruijnIndex) -> String {
+    fn traverse(&mut self, expression: &Expression, current_scope: DeBruijnIndex) -> String {
         let mut parameter_type = None;
         if let PrinterMode::Named = self.mode {
             if let Expression::TypedAbstraction(abstraction) = expression {
-                parameter_type = Some(self.traverse(&mut abstraction.parameter_type, current_scope))
+                parameter_type = Some(self.traverse(&abstraction.parameter_type, current_scope))
             }
         };
         let parameter_type = parameter_type;
@@ -98,8 +98,8 @@ impl ExpressionPrettyPrinter {
             Expression::Application(application) => {
                 let argument_is_application =
                     matches!(application.argument, Expression::Application(_));
-                let applicator = self.traverse(&mut application.applicator, current_scope);
-                let argument = self.traverse(&mut application.argument, current_scope);
+                let applicator = self.traverse(&application.applicator, current_scope);
+                let argument = self.traverse(&application.argument, current_scope);
                 if argument_is_application {
                     format!("{} ({})", applicator, argument,)
                 } else {
