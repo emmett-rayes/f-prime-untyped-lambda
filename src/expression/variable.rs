@@ -5,38 +5,24 @@ use crate::expression::buffer::PositionedBuffer;
 use crate::expression::symbol::{symbol_parser, Symbol};
 
 pub type DeBruijnIndex = u64;
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct IndexedVariable {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Variable {
+    pub symbol: Symbol,
     pub index: DeBruijnIndex,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct NamedVariable {
-    pub symbol: Symbol,
-}
-
-impl From<Symbol> for NamedVariable {
+impl From<Symbol> for Variable {
     fn from(value: Symbol) -> Self {
-        NamedVariable { symbol: value }
+        Variable {
+            symbol: value,
+            index: 0,
+        }
     }
-}
-
-impl Parsable for NamedVariable {
-    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = symbol_parser().map(NamedVariable::from);
-        parser.parse(input)
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Variable {
-    Indexed(IndexedVariable),
-    Named(NamedVariable),
 }
 
 impl Parsable for Variable {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = NamedVariable::parser().map(Variable::Named);
+        let parser = symbol_parser().map(Variable::from);
         parser.parse(input)
     }
 }
@@ -51,11 +37,11 @@ mod tests {
     fn test_variable() {
         let input = PositionedBuffer::new("x y");
         assert_matches!(
-            NamedVariable::parse(input),
+            Variable::parse(input),
             Ok((variable, _)) if variable.symbol == "x",
         );
 
         let input = PositionedBuffer::new("->");
-        assert_matches!(NamedVariable::parse(input), Err(_),);
+        assert_matches!(Variable::parse(input), Err(_),);
     }
 }

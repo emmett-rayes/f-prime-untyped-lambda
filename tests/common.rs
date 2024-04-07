@@ -1,25 +1,24 @@
-use f_prime::expr::buffer::PositionedBuffer;
-use f_prime::expr::Expression;
-use f_prime::term::untyped::de_bruijn::DeBruijnConverter;
-use f_prime::term::untyped::pretty_print::UntypedPrettyPrinter;
-use f_prime::term::untyped::UntypedTerm;
+use f_prime::expression::buffer::{Parsable, PositionedBuffer};
+use f_prime::expression::Expression;
+use f_prime::traverse::de_bruijn::convert::DeBruijnConverter;
+use f_prime::traverse::pretty_print::ExpressionPrettyPrinter;
 
-pub fn parse_untyped_term(input: &str) -> UntypedTerm {
+pub fn parse_expression(input: &str) -> Expression {
     let input = PositionedBuffer::new(input);
-    let output = UntypedTerm::parse(input);
+    let output = Expression::parse(input);
     output.unwrap().0
 }
 
-pub fn convert_de_bruijn(term: &mut UntypedTerm) {
-    DeBruijnConverter::convert(term);
+pub fn convert_de_bruijn(expression: &mut Expression) {
+    DeBruijnConverter::convert(expression);
 }
 
-pub fn pretty_print_untyped_term(term: &mut UntypedTerm) -> String {
-    UntypedPrettyPrinter::format_de_bruijn(term)
+pub fn pretty_print_expression(term: &mut Expression) -> String {
+    ExpressionPrettyPrinter::format_de_bruijn(term)
 }
 
 pub fn process_untyped(input: &str) -> String {
-    let mut term = parse_untyped_term(input);
+    let mut term = parse_expression(input);
     convert_de_bruijn(&mut term);
-    pretty_print_untyped_term(&mut term)
+    pretty_print_expression(&mut term)
 }

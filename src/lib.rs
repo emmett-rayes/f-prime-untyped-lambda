@@ -1,8 +1,7 @@
 #![feature(assert_matches)]
 
-mod lang;
-mod visitor;
-
 pub mod eval;
 pub mod expression;
+mod lang;
 pub mod term;
+pub mod traverse;

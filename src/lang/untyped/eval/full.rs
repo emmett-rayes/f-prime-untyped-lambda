@@ -1,49 +1,38 @@
 use crate::eval::untyped::by_value::CallByValueEvaluator;
-use crate::eval::TracingBetaReduction;
-use crate::term::untyped::pretty_print::UntypedPrettyPrinter;
-use crate::term::untyped::UntypedTerm;
-use crate::visitor::Visitor;
+use crate::eval::BetaReduction;
+use crate::term::untyped::UntypedLambdaTerm;
+use crate::term::Term;
 
 pub struct FullBetaEvaluator;
 
-impl TracingBetaReduction<UntypedTerm> for FullBetaEvaluator {
-    fn trace_once(term: &mut UntypedTerm) -> Option<String> {
-        let mut visitor = CallByValueEvaluator::new(true);
-        if visitor.visit((), term) {
-            Some(UntypedPrettyPrinter::format(term))
-        } else {
-            None
-        }
-    }
-
-    fn trace(term: &mut UntypedTerm) -> Vec<String> {
-        let mut visitor = CallByValueEvaluator::new(true);
-        let mut trace = Vec::new();
-        while visitor.visit((), term) {
-            trace.push(UntypedPrettyPrinter::format(term));
-        }
-        trace
+impl BetaReduction<UntypedLambdaTerm> for FullBetaEvaluator {
+    fn reduce_once(term: &mut UntypedLambdaTerm) -> bool {
+        CallByValueEvaluator::normalize(term.as_expr())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::eval::BetaReduction;
-    use crate::expr::buffer::PositionedBuffer;
-    use crate::expr::Expression;
-    use crate::term::untyped::de_bruijn::DeBruijnConverter;
+    use crate::expression::buffer::{Parsable, PositionedBuffer};
+    use crate::expression::Expression;
+    use crate::term::Term;
+    use crate::traverse::de_bruijn::convert::DeBruijnConverter;
+    use crate::traverse::pretty_print::ExpressionPrettyPrinter;
+
+    use super::*;
 
     #[test]
     fn test_full_beta() {
         let input = PositionedBuffer::new("(λn.λs.λz.s (n s z)) (λs.λz.z)");
         dbg!(&input.buffer);
-        let output = UntypedTerm::parse(input);
-        let mut term = output.unwrap().0;
-        DeBruijnConverter::convert(&mut term);
+        let output = Expression::parse(input);
+        let mut expression = output.unwrap().0;
+        DeBruijnConverter::convert(&mut expression);
+        let mut term = UntypedLambdaTerm::new(expression);
         let result = FullBetaEvaluator::reduce(&mut term);
         assert!(result);
-        let format = UntypedPrettyPrinter::format(&mut term);
+        let format = ExpressionPrettyPrinter::format(term.as_expr());
         assert_eq!(format, "λs. λz. s z");
     }
 }

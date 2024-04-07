@@ -5,7 +5,7 @@ use crate::expression::abstraction::Abstraction;
 use crate::expression::application::Application;
 use crate::expression::buffer::{Parsable, PositionedBuffer};
 use crate::expression::symbol::literal_parser;
-use crate::expression::variable::{IndexedVariable, NamedVariable, Variable};
+use crate::expression::variable::Variable;
 
 pub mod abstraction;
 pub mod application;
@@ -16,10 +16,15 @@ pub mod variable;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Expression {
-    NamedVariable(NamedVariable),
-    IndexedVariable(IndexedVariable),
+    Variable(Variable),
     Abstraction(Box<Abstraction>),
     Application(Box<Application>),
+}
+
+impl Expression {
+    pub fn is_value(&self) -> bool {
+        matches!(self, Expression::Abstraction(_))
+    }
 }
 
 impl Expression {
@@ -55,24 +60,9 @@ impl Parsable for Expression {
     }
 }
 
-impl From<NamedVariable> for Expression {
-    fn from(value: NamedVariable) -> Self {
-        Expression::NamedVariable(value)
-    }
-}
-
-impl From<IndexedVariable> for Expression {
-    fn from(value: IndexedVariable) -> Self {
-        Expression::IndexedVariable(value)
-    }
-}
-
 impl From<Variable> for Expression {
     fn from(value: Variable) -> Self {
-        match value {
-            Variable::Indexed(variable) => Self::from(variable),
-            Variable::Named(variable) => Self::from(variable),
-        }
+        Expression::Variable(value)
     }
 }
 
