@@ -13,10 +13,8 @@ impl BetaReduction<UntypedLambdaTerm> for FullBetaEvaluator {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval::BetaReduction;
     use crate::expression::buffer::{Parsable, PositionedBuffer};
     use crate::expression::Expression;
-    use crate::term::Term;
     use crate::traverse::de_bruijn::convert::DeBruijnConverter;
     use crate::traverse::pretty_print::ExpressionPrettyPrinter;
 

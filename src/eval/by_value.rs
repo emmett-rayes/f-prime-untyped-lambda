@@ -26,9 +26,9 @@ impl CallByValueEvaluator {
     fn traverse(&mut self, expression: &mut Expression) -> bool {
         match expression {
             Expression::Variable(_) => false,
-            Expression::Abstraction(box Abstraction { parameter, body })
+            Expression::Abstraction(box Abstraction { parameter: _, body })
             | Expression::TypedAbstraction(box TypedAbstraction {
-                parameter, body, ..
+                parameter: _, body, ..
             }) => self.normalize && self.traverse(body),
             Expression::Application(application) => {
                 if (self.normalize || !application.applicator.is_value())

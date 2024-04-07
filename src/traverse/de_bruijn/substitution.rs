@@ -20,9 +20,9 @@ impl DeBruijnSubstitution {
                     *expression = self.replacement.clone()
                 }
             }
-            Expression::Abstraction(box Abstraction { parameter, body })
+            Expression::Abstraction(box Abstraction { parameter: _, body })
             | Expression::TypedAbstraction(box TypedAbstraction {
-                parameter, body, ..
+                parameter: _, body, ..
             }) => {
                 let replacement = self.replacement.clone();
                 DeBruijnShift::shift(1, &mut self.replacement);

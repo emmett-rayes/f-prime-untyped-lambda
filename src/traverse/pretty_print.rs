@@ -1,5 +1,5 @@
 use crate::expression::abstraction::{Abstraction, TypedAbstraction};
-use crate::expression::variable::{DeBruijnIndex, Variable};
+use crate::expression::variable::DeBruijnIndex;
 use crate::expression::Expression;
 
 enum PrinterMode {
@@ -113,7 +113,6 @@ impl ExpressionPrettyPrinter {
 #[cfg(test)]
 mod tests {
     use crate::expression::buffer::{Parsable, PositionedBuffer};
-    use crate::expression::Expression;
     use crate::traverse::de_bruijn::convert::DeBruijnConverter;
 
     use super::*;
