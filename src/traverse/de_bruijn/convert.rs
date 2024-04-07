@@ -16,32 +16,32 @@ impl DeBruijnConverter {
         converter.traverse(expression, 0);
     }
 
-    fn traverse(&mut self, expression: &mut Expression, mut current_scope: DeBruijnIndex) {
+    fn traverse(&mut self, expression: &mut Expression, current_scope: DeBruijnIndex) {
         match expression {
             Expression::Variable(variable) => {
-                let scope = if let Some(binding_scope) = self
+                let binding_scope = if let Some(&scope) = self
                     .variable_context
                     .get(&variable.symbol)
                     .map(|scopes| scopes.last().unwrap())
                 {
-                    (current_scope as i64 - binding_scope + 1) as DeBruijnIndex
+                    scope
                 } else {
                     self.free_variables += 1;
+                    let scope = -(self.free_variables as i64);
                     self.variable_context
                         .entry(variable.symbol.clone())
                         .or_default()
-                        .push(current_scope as i64 - self.free_variables as i64);
-                    current_scope + self.free_variables
+                        .push(scope);
+                    scope
                 };
-                variable.index = scope;
+                variable.index = (current_scope as i64 - binding_scope) as DeBruijnIndex;
             }
             Expression::Abstraction(abstraction) => {
-                current_scope += 1;
                 self.variable_context
                     .entry(abstraction.parameter.symbol.clone())
                     .or_default()
                     .push(current_scope as i64);
-                self.traverse(&mut abstraction.body, current_scope);
+                self.traverse(&mut abstraction.body, current_scope + 1);
                 self.variable_context
                     .get_mut(&abstraction.parameter.symbol.clone())
                     .unwrap()
@@ -69,6 +69,15 @@ mod tests {
         DeBruijnConverter::convert(&mut expression);
         let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
         assert_eq!(pretty, "1 2 3");
+    }
+
+    #[test]
+    fn test_free_variables_nested() {
+        let input = PositionedBuffer::new("b (λx.λy.b)");
+        let (mut expression, _) = Expression::parse(input).unwrap();
+        DeBruijnConverter::convert(&mut expression);
+        let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
+        assert_eq!(pretty, "1 (λ λ 3)");
     }
 
     #[test]
