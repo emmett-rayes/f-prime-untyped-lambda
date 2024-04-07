@@ -11,6 +11,18 @@ pub struct Abstraction {
     pub body: Expression,
 }
 
+impl TryFrom<Expression> for Abstraction {
+    type Error = ();
+
+    fn try_from(value: Expression) -> Result<Self, Self::Error> {
+        if let Expression::Abstraction(abstraction) = value {
+            Ok(*abstraction)
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl Parsable for Abstraction {
     fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
         let parser = literal_parser("λ")
@@ -27,17 +39,5 @@ impl Parsable for Abstraction {
             .map(|expr| Abstraction::try_from(expr).unwrap());
 
         parser.parse(input)
-    }
-}
-
-impl TryFrom<Expression> for Abstraction {
-    type Error = ();
-
-    fn try_from(value: Expression) -> Result<Self, Self::Error> {
-        if let Expression::Abstraction(abstraction) = value {
-            Ok(*abstraction)
-        } else {
-            Err(())
-        }
     }
 }

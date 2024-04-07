@@ -3,6 +3,7 @@ use f_prime_parser::{Parser, ParserResult};
 use crate::expression::buffer::Parsable;
 use crate::expression::buffer::PositionedBuffer;
 use crate::expression::symbol::{symbol_parser, Symbol};
+use crate::expression::Expression;
 
 pub type DeBruijnIndex = u64;
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -16,6 +17,18 @@ impl From<Symbol> for Variable {
         Variable {
             symbol: value,
             index: 0,
+        }
+    }
+}
+
+impl TryFrom<Expression> for Variable {
+    type Error = ();
+
+    fn try_from(value: Expression) -> Result<Self, Self::Error> {
+        if let Expression::Variable(variable) = value {
+            Ok(variable)
+        } else {
+            Err(())
         }
     }
 }

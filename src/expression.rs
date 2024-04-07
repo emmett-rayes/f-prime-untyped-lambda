@@ -51,15 +51,6 @@ impl Expression {
     }
 }
 
-impl Parsable for Expression {
-    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = Expression::abstraction_parser()
-            .or_else(Expression::application_parser())
-            .or_else(Expression::atom_parser());
-        parser.parse(input)
-    }
-}
-
 impl From<Variable> for Expression {
     fn from(value: Variable) -> Self {
         Expression::Variable(value)
@@ -78,21 +69,67 @@ impl From<Application> for Expression {
     }
 }
 
+impl Parsable for Expression {
+    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
+        let parser = Expression::abstraction_parser()
+            .or_else(Expression::application_parser())
+            .or_else(Expression::atom_parser());
+        parser.parse(input)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::assert_matches::assert_matches;
 
     #[test]
-    fn test_parser() {
-        let input = PositionedBuffer::new("λx. a (λt. b x t (f (λu. a u t z) λs. w)) w y");
-        let output = Expression::parse(input);
-        assert!(output.unwrap().1.buffer.is_empty())
+    fn test_variable() {
+        let input = PositionedBuffer::new("x");
+        let (expression, remaining) = Expression::parse(input).unwrap();
+        assert!(remaining.buffer.is_empty());
+        assert_matches!(expression, Expression::Variable(_));
+        let variable = Variable::try_from(expression).unwrap();
+        assert_eq!(variable.symbol, "x");
     }
 
     #[test]
-    fn test_multi_abstraction() {
+    fn test_abstraction() {
+        let input = PositionedBuffer::new("λx. y x");
+        let (expression, remaining) = Expression::parse(input).unwrap();
+        assert!(remaining.buffer.is_empty());
+        assert_matches!(expression, Expression::Abstraction(_));
+        let abstraction = Abstraction::try_from(expression).unwrap();
+        assert_eq!(abstraction.parameter.symbol, "x");
+        assert_matches!(abstraction.body, Expression::Application(_));
+    }
+
+    #[test]
+    fn test_abstraction_nested() {
         let input = PositionedBuffer::new("λx y.x y z");
-        let output = Expression::parse(input);
-        assert!(output.unwrap().1.buffer.is_empty())
+        let (expression, remaining) = Expression::parse(input).unwrap();
+        assert!(remaining.buffer.is_empty());
+        assert_matches!(expression, Expression::Abstraction(_));
+        let abstraction = Abstraction::try_from(expression).unwrap();
+        assert_matches!(abstraction.body, Expression::Abstraction(_));
+    }
+
+    #[test]
+    fn test_application() {
+        let input = PositionedBuffer::new("(λx. x) (λx. x)");
+        let (expression, remaining) = Expression::parse(input).unwrap();
+        assert!(remaining.buffer.is_empty());
+        assert_matches!(expression, Expression::Application(_));
+        let application = Application::try_from(expression).unwrap();
+        assert_matches!(application.applicator, Expression::Abstraction(_));
+        assert_matches!(application.argument, Expression::Abstraction(_));
+    }
+
+    #[test]
+    fn test_expression() {
+        let input = PositionedBuffer::new("λx. a (λt. b x t (f (λu. a u t z) λs. w)) w y");
+        let (expression, remaining) = Expression::parse(input).unwrap();
+        assert!(remaining.buffer.is_empty());
+        assert_matches!(expression, Expression::Abstraction(_));
     }
 }
