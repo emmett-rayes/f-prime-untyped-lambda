@@ -9,5 +9,9 @@ cargo run -p repl
 ```
 
 ### Languages
-The following languages are implemented:
-- The Untyped Lambda Calculus
+The following languages are currently implemented
+
+#### The Untyped Lambda Calculus
+- Internally modeled using De Bruijn indices
+- Pretty printers for named variables, De Bruijn indices, and nameless locals
+- Call by value and full beta reduction evaluators
