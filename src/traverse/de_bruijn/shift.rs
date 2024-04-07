@@ -1,5 +1,7 @@
+use crate::expression::abstraction::{Abstraction, TypedAbstraction};
 use crate::expression::variable::DeBruijnIndex;
 use crate::expression::Expression;
+use std::ops::Deref;
 
 pub struct DeBruijnShift {
     place: i64,
@@ -18,14 +20,16 @@ impl DeBruijnShift {
                     variable.index = variable.index.saturating_add_signed(self.place);
                 }
             }
-            Expression::Abstraction(abstraction) => {
-                self.traverse(cutoff + 1, &mut abstraction.body);
+            Expression::Abstraction(box Abstraction { parameter, body })
+            | Expression::TypedAbstraction(box TypedAbstraction {
+                parameter, body, ..
+            }) => {
+                self.traverse(cutoff + 1, body);
             }
             Expression::Application(application) => {
                 self.traverse(cutoff, &mut application.applicator);
                 self.traverse(cutoff, &mut application.argument);
             }
-            _ => unimplemented!(),
         }
     }
 }
