@@ -1,3 +1,4 @@
+use crate::expression::abstraction::{Abstraction, TypedAbstraction};
 use crate::expression::variable::DeBruijnIndex;
 use crate::expression::Expression;
 use crate::traverse::de_bruijn::shift::DeBruijnShift;
@@ -19,17 +20,19 @@ impl DeBruijnSubstitution {
                     *expression = self.replacement.clone()
                 }
             }
-            Expression::Abstraction(abstraction) => {
+            Expression::Abstraction(box Abstraction { parameter, body })
+            | Expression::TypedAbstraction(box TypedAbstraction {
+                parameter, body, ..
+            }) => {
                 let replacement = self.replacement.clone();
                 DeBruijnShift::shift(1, &mut self.replacement);
-                self.traverse(target + 1, &mut abstraction.body);
+                self.traverse(target + 1, body);
                 self.replacement = replacement;
             }
             Expression::Application(application) => {
                 self.traverse(target, &mut application.applicator);
                 self.traverse(target, &mut application.argument);
             }
-            _ => unimplemented!(),
         }
     }
 }
