@@ -1,4 +1,5 @@
 #![feature(assert_matches)]
+#![feature(box_patterns)]
 
 pub mod eval;
 pub mod expression;

@@ -141,7 +141,6 @@ mod tests {
         let input = PositionedBuffer::new("λx:T,y:U.x y z");
         let (expression, remaining) = Expression::parse(input).unwrap();
         assert!(remaining.buffer.is_empty());
-        dbg!(&expression);
         assert_matches!(expression, Expression::TypedAbstraction(_));
         let abstraction = TypedAbstraction::try_from(expression).unwrap();
         assert_matches!(abstraction.body, Expression::TypedAbstraction(_));

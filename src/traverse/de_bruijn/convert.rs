@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::expression::abstraction::{Abstraction, TypedAbstraction};
 use crate::expression::symbol::Symbol;
 use crate::expression::variable::DeBruijnIndex;
 use crate::expression::Expression;
@@ -36,14 +37,17 @@ impl DeBruijnConverter {
                 };
                 variable.index = (current_scope as i64 - binding_scope) as DeBruijnIndex;
             }
-            Expression::Abstraction(abstraction) => {
+            Expression::Abstraction(box Abstraction { parameter, body })
+            | Expression::TypedAbstraction(box TypedAbstraction {
+                parameter, body, ..
+            }) => {
                 self.variable_context
-                    .entry(abstraction.parameter.symbol.clone())
+                    .entry(parameter.symbol.clone())
                     .or_default()
                     .push(current_scope as i64);
-                self.traverse(&mut abstraction.body, current_scope + 1);
+                self.traverse(body, current_scope + 1);
                 self.variable_context
-                    .get_mut(&abstraction.parameter.symbol.clone())
+                    .get_mut(&parameter.symbol.clone())
                     .unwrap()
                     .pop();
             }
@@ -51,7 +55,6 @@ impl DeBruijnConverter {
                 self.traverse(&mut application.applicator, current_scope);
                 self.traverse(&mut application.argument, current_scope);
             }
-            _ => unimplemented!(),
         }
     }
 }
