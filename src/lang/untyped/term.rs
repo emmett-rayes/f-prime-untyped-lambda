@@ -35,3 +35,29 @@ impl Term for UntypedLambdaTerm {
         Self::validate(&self.expression)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::expression::buffer::{Parsable, PositionedBuffer};
+    use crate::traverse::de_bruijn::convert::DeBruijnConverter;
+
+    use super::*;
+
+    #[test]
+    fn test_untyped_valid() {
+        let input = PositionedBuffer::new("(λx. x) (λx. x)");
+        let mut expression = Expression::parse(input).unwrap().0;
+        DeBruijnConverter::convert(&mut expression);
+        let term = UntypedLambdaTerm::new(expression);
+        assert!(term.validate());
+    }
+
+    #[test]
+    fn test_untyped_invalid() {
+        let input = PositionedBuffer::new("(λx: T. x) (λy: U. y)");
+        let mut expression = Expression::parse(input).unwrap().0;
+        DeBruijnConverter::convert(&mut expression);
+        let term = UntypedLambdaTerm::new(expression);
+        assert!(!term.validate());
+    }
+}
