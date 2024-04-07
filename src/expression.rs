@@ -80,8 +80,9 @@ impl Parsable for Expression {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::assert_matches::assert_matches;
+
+    use super::*;
 
     #[test]
     fn test_variable() {

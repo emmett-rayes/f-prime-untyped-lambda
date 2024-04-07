@@ -25,7 +25,6 @@ mod tests {
     #[test]
     fn test_full_beta() {
         let input = PositionedBuffer::new("(λn.λs.λz.s (n s z)) (λs.λz.z)");
-        dbg!(&input.buffer);
         let output = Expression::parse(input);
         let mut expression = output.unwrap().0;
         DeBruijnConverter::convert(&mut expression);
