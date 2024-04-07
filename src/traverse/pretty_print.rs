@@ -38,11 +38,11 @@ impl ExpressionPrettyPrinter {
     fn traverse(&mut self, expression: &mut Expression) -> String {
         match expression {
             Expression::Variable(variable) => {
-                if variable.index == 0 || !self.indexed_variables {
+                if self.indexed_variables {
+                    variable.index.to_string()
+                } else {
                     self.free_variables.insert(variable.symbol.clone());
                     variable.symbol.clone()
-                } else {
-                    variable.index.to_string()
                 }
             }
             Expression::Abstraction(abstraction) => {
@@ -101,7 +101,7 @@ mod tests {
         let (mut expression, _) = Expression::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
         let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
-        assert_eq!(pretty, "λ λ λ w 3 2 1");
+        assert_eq!(pretty, "λ λ λ 4 3 2 1");
     }
 
     #[test]

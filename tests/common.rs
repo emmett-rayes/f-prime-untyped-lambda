@@ -13,8 +13,8 @@ pub fn convert_de_bruijn(expression: &mut Expression) {
     DeBruijnConverter::convert(expression);
 }
 
-pub fn pretty_print_expression(term: &mut Expression) -> String {
-    ExpressionPrettyPrinter::format_indexed(term)
+pub fn pretty_print_expression(expression: &mut Expression) -> String {
+    ExpressionPrettyPrinter::format_indexed(expression)
 }
 
 pub fn process_untyped(input: &str) -> String {

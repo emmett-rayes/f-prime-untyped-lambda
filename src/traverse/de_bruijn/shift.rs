@@ -6,9 +6,9 @@ pub struct DeBruijnShift {
 }
 
 impl DeBruijnShift {
-    pub fn shift(place: i64, term: &mut Expression) {
+    pub fn shift(place: i64, expression: &mut Expression) {
         let mut shifter = Self { place };
-        shifter.traverse(1, term)
+        shifter.traverse(1, expression)
     }
 
     fn traverse(&mut self, cutoff: DeBruijnIndex, expression: &mut Expression) {
@@ -26,5 +26,33 @@ impl DeBruijnShift {
                 self.traverse(cutoff, &mut application.argument);
             }
         }
+    }
+}
+
+mod tests {
+    use crate::expression::buffer::{Parsable, PositionedBuffer};
+    use crate::traverse::de_bruijn::convert::DeBruijnConverter;
+    use crate::traverse::pretty_print::ExpressionPrettyPrinter;
+
+    use super::*;
+
+    #[test]
+    fn test_shift() {
+        let input = PositionedBuffer::new("(λx.λy. x (y w))");
+        let (mut expression, _) = Expression::parse(input).unwrap();
+        DeBruijnConverter::convert(&mut expression);
+        DeBruijnShift::shift(2, &mut expression);
+        let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
+        assert_eq!(pretty, "λ λ 2 (1 5)");
+    }
+
+    #[test]
+    fn test_shift_nested() {
+        let input = PositionedBuffer::new("(λx. x w (λy. y x w))");
+        let (mut expression, _) = Expression::parse(input).unwrap();
+        DeBruijnConverter::convert(&mut expression);
+        DeBruijnShift::shift(2, &mut expression);
+        let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
+        assert_eq!(pretty, "λ 1 4 (λ 1 2 5)");
     }
 }
