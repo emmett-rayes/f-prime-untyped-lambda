@@ -42,3 +42,28 @@ impl DeBruijnConverter {
         }
     }
 }
+
+mod tests {
+    use crate::expression::buffer::{Parsable, PositionedBuffer};
+    use crate::traverse::pretty_print::ExpressionPrettyPrinter;
+
+    use super::*;
+
+    #[test]
+    fn test_free_variable() {
+        let input = PositionedBuffer::new("a");
+        let (mut expression, _) = Expression::parse(input).unwrap();
+        DeBruijnConverter::convert(&mut expression);
+        let pretty = ExpressionPrettyPrinter::format(&mut expression);
+        assert_eq!(pretty, "a");
+    }
+
+    #[test]
+    fn test_scopes() {
+        let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
+        let (mut expression, _) = Expression::parse(input).unwrap();
+        DeBruijnConverter::convert(&mut expression);
+        let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
+        assert_eq!(pretty, "λ λ λ w 3 2 1");
+    }
+}
