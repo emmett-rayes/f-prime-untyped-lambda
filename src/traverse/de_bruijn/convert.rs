@@ -16,7 +16,7 @@ impl DeBruijnConverter {
         converter.traverse(expression, 0);
     }
 
-    fn traverse(&mut self, expression: &mut Expression, mut current_scope: i64) {
+    fn traverse(&mut self, expression: &mut Expression, mut current_scope: DeBruijnIndex) {
         match expression {
             Expression::Variable(variable) => {
                 let scope = if let Some(binding_scope) = self
@@ -24,23 +24,23 @@ impl DeBruijnConverter {
                     .get(&variable.symbol)
                     .map(|scopes| scopes.last().unwrap())
                 {
-                    current_scope - binding_scope + 1
+                    (current_scope as i64 - binding_scope + 1) as DeBruijnIndex
                 } else {
                     self.free_variables += 1;
                     self.variable_context
                         .entry(variable.symbol.clone())
                         .or_default()
-                        .push(current_scope - self.free_variables as i64);
-                    current_scope + self.free_variables as i64
+                        .push(current_scope as i64 - self.free_variables as i64);
+                    current_scope + self.free_variables
                 };
-                variable.index = scope as DeBruijnIndex;
+                variable.index = scope;
             }
             Expression::Abstraction(abstraction) => {
                 current_scope += 1;
                 self.variable_context
                     .entry(abstraction.parameter.symbol.clone())
                     .or_default()
-                    .push(current_scope);
+                    .push(current_scope as i64);
                 self.traverse(&mut abstraction.body, current_scope);
                 self.variable_context
                     .get_mut(&abstraction.parameter.symbol.clone())

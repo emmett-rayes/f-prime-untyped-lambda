@@ -32,7 +32,7 @@ mod tests {
         let mut term = UntypedLambdaTerm::new(expression);
         let result = FullBetaEvaluator::reduce(&mut term);
         assert!(result);
-        let format = ExpressionPrettyPrinter::format(term.as_expr());
+        let format = ExpressionPrettyPrinter::format_named(term.as_expr());
         assert_eq!(format, "λs. λz. s z");
     }
 }

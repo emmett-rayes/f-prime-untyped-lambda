@@ -21,7 +21,7 @@ fn substitution() {
 
 #[test]
 fn iota() {
-    assert_eq!(process_untyped("λx. x S K"), "λ 1 2 3");
+    assert_eq!(process_untyped("λx. x S K"), "λ 1 S K");
 }
 
 #[test]

@@ -39,7 +39,7 @@ fn main() -> Result<(), std::io::Error> {
         }
         let mut expression = parsed.0;
         DeBruijnConverter::convert(&mut expression);
-        let format = ExpressionPrettyPrinter::format(&mut expression);
+        let format = ExpressionPrettyPrinter::format_named(&mut expression);
         let mut term = UntypedLambdaTerm::new(expression);
         let result = FullBetaEvaluator::trace(&mut term);
         if result.is_empty() {
