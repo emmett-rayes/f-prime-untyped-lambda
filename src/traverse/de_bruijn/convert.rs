@@ -1,7 +1,7 @@
 use std::collections::{HashMap, LinkedList};
 
-use crate::expression::Expression;
 use crate::expression::variable::DeBruijnIndex;
+use crate::expression::Expression;
 
 #[derive(Default)]
 pub struct DeBruijnConverter {

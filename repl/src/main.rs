@@ -1,8 +1,9 @@
+use std::io::{BufRead, Write};
+
 use f_prime::eval::untyped::full::FullBetaEvaluator;
 use f_prime::eval::TracingBetaReduction;
 use f_prime::expression::buffer::{Parsable, PositionedBuffer};
 use f_prime::expression::Expression;
-use std::io::{BufRead, Write};
 use f_prime::term::untyped::UntypedLambdaTerm;
 use f_prime::traverse::de_bruijn::convert::DeBruijnConverter;
 use f_prime::traverse::pretty_print::ExpressionPrettyPrinter;
