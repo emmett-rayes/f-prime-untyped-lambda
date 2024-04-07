@@ -69,6 +69,7 @@ impl CallByValueEvaluator {
                     unreachable!()
                 }
             }
+            _ => unimplemented!(),
         }
     }
 }

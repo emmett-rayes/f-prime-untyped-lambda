@@ -25,6 +25,7 @@ impl DeBruijnShift {
                 self.traverse(cutoff, &mut application.applicator);
                 self.traverse(cutoff, &mut application.argument);
             }
+            _ => unimplemented!(),
         }
     }
 }

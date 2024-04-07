@@ -29,6 +29,7 @@ impl DeBruijnSubstitution {
                 self.traverse(target, &mut application.applicator);
                 self.traverse(target, &mut application.argument);
             }
+            _ => unimplemented!(),
         }
     }
 }

@@ -82,6 +82,7 @@ impl ExpressionPrettyPrinter {
                     format!("{} {}", applicator, argument,)
                 }
             }
+            _ => unimplemented!(),
         }
     }
 }

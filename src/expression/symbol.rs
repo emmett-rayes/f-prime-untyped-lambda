@@ -11,7 +11,9 @@ fn parse_symbol(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Symbo
     let mut matched = 0;
     match chars.next() {
         Some(c) if c.is_ascii_alphabetic() => matched += 1,
-        _ => return Err(input.error("Invalid symbol.".to_string())),
+        _ => {
+            return Err(input.error("Invalid symbol.".to_string()));
+        }
     }
 
     for c in chars {

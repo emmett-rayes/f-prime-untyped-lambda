@@ -51,6 +51,7 @@ impl DeBruijnConverter {
                 self.traverse(&mut application.applicator, current_scope);
                 self.traverse(&mut application.argument, current_scope);
             }
+            _ => unimplemented!(),
         }
     }
 }
