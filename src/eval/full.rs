@@ -1,4 +1,4 @@
-use crate::eval::untyped::by_value::CallByValueEvaluator;
+use crate::eval::by_value::CallByValueEvaluator;
 use crate::eval::BetaReduction;
 use crate::term::untyped::UntypedLambdaTerm;
 use crate::term::Term;

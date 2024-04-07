@@ -1,6 +1,6 @@
 use std::io::{BufRead, Write};
 
-use f_prime::eval::untyped::full::FullBetaEvaluator;
+use f_prime::eval::full::FullBetaEvaluator;
 use f_prime::eval::TracingBetaReduction;
 use f_prime::expression::buffer::{Parsable, PositionedBuffer};
 use f_prime::expression::Expression;

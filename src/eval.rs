@@ -1,6 +1,8 @@
-pub use crate::lang::untyped::eval as untyped;
 use crate::term::Term;
 use crate::traverse::pretty_print::ExpressionPrettyPrinter;
+
+pub mod by_value;
+pub mod full;
 
 pub trait BetaReduction<T>
 where
