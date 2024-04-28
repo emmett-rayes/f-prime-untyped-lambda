@@ -1,7 +1,7 @@
 use crate::eval::BetaReduction;
 use crate::expression::abstraction::{Abstraction, TypedAbstraction};
-use crate::expression::UntypedLambda;
 use crate::expression::variable::Variable;
+use crate::expression::UntypedLambda;
 use crate::term::Term;
 use crate::traverse::de_bruijn::shift::DeBruijnShift;
 use crate::traverse::de_bruijn::substitution::DeBruijnSubstitution;

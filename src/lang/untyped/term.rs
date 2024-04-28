@@ -24,8 +24,8 @@ impl UntypedLambda {
 
 impl<'a> DefaultParsable<PositionedBuffer<'a>> for UntypedLambda {
     fn parser() -> impl Parser<PositionedBuffer<'a>, Output = Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         UntypedLambdaParser
     }
@@ -46,10 +46,10 @@ impl UntypedLambdaParser {
         companion_tag: UntypedLambdaCompanion,
         parser: P,
     ) -> impl Parser<I, Output = O> + 'b
-        where
-            O: 'b,
-            I: ParserInput + 'b,
-            P: Parser<I, Output = O> + 'b,
+    where
+        O: 'b,
+        I: ParserInput + 'b,
+        P: Parser<I, Output = O> + 'b,
     {
         std::thread_local! {
             static PENDING : Cell<Option<UntypedLambdaCompanion>> = const { Cell::new(None) };
@@ -108,9 +108,9 @@ impl<'a> Parser<PositionedBuffer<'a>> for UntypedLambdaParser {
         &self,
         input: PositionedBuffer<'a>,
     ) -> ParserResult<PositionedBuffer<'a>, Self::Output>
-        where
-            PositionedBuffer<'a>: 'b,
-            Self::Output: 'b,
+    where
+        PositionedBuffer<'a>: 'b,
+        Self::Output: 'b,
     {
         let parser = Self::abstraction_parser()
             .or_else(Self::application_parser())

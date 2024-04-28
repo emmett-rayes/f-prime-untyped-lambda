@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use crate::expression::UntypedLambda;
 use crate::expression::variable::Variable;
+use crate::expression::UntypedLambda;
 use crate::term::simple::SimplyTypedLambdaTerm;
 use crate::term::Term;
 use crate::typecheck::TypeChecker;
