@@ -1,10 +1,10 @@
 use std::io::{BufRead, Write};
 
-use f_prime::eval::full::FullBetaEvaluator;
+use f_prime::eval::by_value::FullBetaEvaluator;
 use f_prime::eval::TracingBetaReduction;
 use f_prime::expression::buffer::{Parsable, PositionedBuffer};
-use f_prime::expression::Expression;
-use f_prime::term::untyped::UntypedLambdaTerm;
+use f_prime::expression::UntypedLambda;
+use f_prime::term::simple::SimplyTypedLambdaTerm;
 use f_prime::traverse::de_bruijn::convert::DeBruijnConverter;
 use f_prime::traverse::pretty_print::ExpressionPrettyPrinter;
 
@@ -27,7 +27,7 @@ fn main() -> Result<(), std::io::Error> {
         }
         let line = line.unwrap();
         let buffer = PositionedBuffer::new(line.as_str());
-        let parsed = Expression::parse(buffer);
+        let parsed = UntypedLambda::parse(buffer);
         if parsed.is_err() {
             print_error();
             continue;
@@ -40,7 +40,7 @@ fn main() -> Result<(), std::io::Error> {
         let mut expression = parsed.0;
         DeBruijnConverter::convert(&mut expression);
         let format = ExpressionPrettyPrinter::format_named(&mut expression);
-        let mut term = UntypedLambdaTerm::new(expression);
+        let mut term = SimplyTypedLambdaTerm::new(expression);
         let result = FullBetaEvaluator::trace(&mut term);
         if result.is_empty() {
             println!("stuck!");

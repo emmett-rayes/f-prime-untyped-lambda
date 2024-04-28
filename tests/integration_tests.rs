@@ -5,6 +5,7 @@ pub mod common;
 /// courtesy of https://github.com/ljedrz/lambda_calculus/blob/master/src/combinators.rs
 
 #[test]
+
 fn identity() {
     assert_eq!(process_untyped("λx. x"), "λ 1");
 }

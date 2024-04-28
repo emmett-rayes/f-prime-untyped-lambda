@@ -1,41 +1,58 @@
-use f_prime_parser::{Parser, ParserResult};
+use std::marker::PhantomData;
 
-use crate::expression::buffer::Parsable;
+use f_prime_parser::{DefaultParsable, Parser, ParserResult};
+
 use crate::expression::buffer::PositionedBuffer;
-use crate::expression::symbol::{symbol_parser, Symbol};
-use crate::expression::Expression;
+use crate::expression::symbol::{Symbol, SymbolParser};
 
 pub type DeBruijnIndex = u64;
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Variable {
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct Variable<T> {
     pub symbol: Symbol,
     pub index: DeBruijnIndex,
+    phantom: PhantomData<T>,
 }
 
-impl From<Symbol> for Variable {
+impl<T> From<Symbol> for Variable<T> {
     fn from(value: Symbol) -> Self {
         Variable {
             symbol: value,
             index: 0,
+            phantom: PhantomData,
         }
     }
 }
 
-impl TryFrom<Expression> for Variable {
-    type Error = ();
+impl<'a, T> DefaultParsable<PositionedBuffer<'a>> for Variable<T> {
+    fn parser() -> impl Parser<PositionedBuffer<'a>, Output = Self> {
+        VariableParser::default()
+    }
+}
 
-    fn try_from(value: Expression) -> Result<Self, Self::Error> {
-        if let Expression::Variable(variable) = value {
-            Ok(variable)
-        } else {
-            Err(())
+pub struct VariableParser<T> {
+    phantom: PhantomData<T>,
+}
+
+impl<T> Default for VariableParser<T> {
+    fn default() -> Self {
+        Self {
+            phantom: PhantomData,
         }
     }
 }
 
-impl Parsable for Variable {
-    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
-        let parser = symbol_parser().map(Variable::from);
+impl<'a, T> Parser<PositionedBuffer<'a>> for VariableParser<T> {
+    type Output = Variable<T>;
+
+    fn parse<'b>(
+        &self,
+        input: PositionedBuffer<'a>,
+    ) -> ParserResult<PositionedBuffer<'a>, Self::Output>
+    where
+        PositionedBuffer<'a>: 'b,
+    {
+        let parser = SymbolParser.map(Variable::from);
         parser.parse(input)
     }
 }
@@ -48,13 +65,16 @@ mod tests {
 
     #[test]
     fn test_variable() {
+        #[derive(Debug)]
+        struct Dummy;
+
         let input = PositionedBuffer::new("x y");
         assert_matches!(
-            Variable::parse(input),
+            Variable::<Dummy>::parser().parse(input),
             Ok((variable, _)) if variable.symbol == "x",
         );
 
         let input = PositionedBuffer::new("->");
-        assert_matches!(Variable::parse(input), Err(_),);
+        assert_matches!(Variable::<Dummy>::parse(input), Err(_),);
     }
 }

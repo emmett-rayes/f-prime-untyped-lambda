@@ -1,6 +1,6 @@
-use crate::expression::abstraction::{Abstraction, TypedAbstraction};
-use crate::expression::variable::DeBruijnIndex;
-use crate::expression::Expression;
+use crate::expression::abstraction::Abstraction;
+use crate::expression::variable::{DeBruijnIndex, Variable};
+use crate::lang::untyped::term::UntypedLambda;
 
 enum PrinterMode {
     Named,
@@ -8,31 +8,54 @@ enum PrinterMode {
     NamelessLocals,
 }
 
+
+trait PrettyPrint {
+    fn pretty_print(&self) -> String;
+}
+
+impl<T> PrettyPrint for Variable<T> {
+    fn pretty_print(&self) -> String {
+        PrinterMode::Named => self.symbol.clone(),
+        PrinterMode::Indexed => self.index.to_string(),
+        PrinterMode::NamelessLocals => {
+            if variable.index <= current_scope {
+                variable.index.to_string()
+            } else {
+                variable.symbol.clone()
+            }
+        }
+    }
+}
+
+impl<P, B> PrettyPrint for Abstraction<P, B> {
+
+}
+
 pub struct ExpressionPrettyPrinter {
     mode: PrinterMode,
 }
 
 impl ExpressionPrettyPrinter {
-    pub fn format_named(expression: &Expression) -> String {
+    pub fn format_named(expression: &UntypedLambda) -> String {
         Self::format_inner(expression, PrinterMode::Named)
     }
 
-    pub fn format_indexed(expression: &Expression) -> String {
+    pub fn format_indexed(expression: &UntypedLambda) -> String {
         Self::format_inner(expression, PrinterMode::Indexed)
     }
 
-    pub fn format_nameless_locals(expression: &Expression) -> String {
+    pub fn format_nameless_locals(expression: &UntypedLambda) -> String {
         Self::format_inner(expression, PrinterMode::NamelessLocals)
     }
 
-    pub fn format(expression: &Expression) -> String {
+    pub fn format(expression: &UntypedLambda) -> String {
         Self::format_named(expression)
     }
 
-    fn format_inner(expression: &Expression, mode: PrinterMode) -> String {
+    fn format_inner(expression: &UntypedLambda, mode: PrinterMode) -> String {
         let expression_is_abstraction = matches!(
             expression,
-            Expression::Abstraction(_) | Expression::TypedAbstraction(_)
+            UntypedLambda::Abstraction(_) | UntypedLambda::TypedAbstraction(_)
         );
         let mut printer = ExpressionPrettyPrinter { mode };
         let string = printer.traverse(expression, 0);
@@ -47,17 +70,17 @@ impl ExpressionPrettyPrinter {
         }
     }
 
-    fn traverse(&mut self, expression: &Expression, current_scope: DeBruijnIndex) -> String {
+    fn traverse(&mut self, expression: &UntypedLambda, current_scope: DeBruijnIndex) -> String {
         let mut parameter_type = None;
         if let PrinterMode::Named = self.mode {
-            if let Expression::TypedAbstraction(abstraction) = expression {
+            if let UntypedLambda::TypedAbstraction(abstraction) = expression {
                 parameter_type = Some(self.traverse(&abstraction.parameter_type, current_scope))
             }
         };
         let parameter_type = parameter_type;
 
         match expression {
-            Expression::Variable(variable) => match self.mode {
+            UntypedLambda::Variable(variable) => match self.mode {
                 PrinterMode::Named => variable.symbol.clone(),
                 PrinterMode::Indexed => variable.index.to_string(),
                 PrinterMode::NamelessLocals => {
@@ -68,13 +91,13 @@ impl ExpressionPrettyPrinter {
                     }
                 }
             },
-            Expression::Abstraction(box Abstraction { parameter, body })
-            | Expression::TypedAbstraction(box TypedAbstraction {
+            UntypedLambda::Abstraction(box Abstraction { parameter, body })
+            | UntypedLambda::TypedAbstraction(box TypedAbstraction {
                 parameter, body, ..
             }) => {
                 let body_is_abstraction = matches!(
                     body,
-                    Expression::Abstraction(_) | Expression::TypedAbstraction(_)
+                    UntypedLambda::Abstraction(_) | UntypedLambda::TypedAbstraction(_)
                 );
                 let body = self.traverse(body, current_scope + 1);
                 let body = if body_is_abstraction {
@@ -95,9 +118,9 @@ impl ExpressionPrettyPrinter {
                     PrinterMode::Indexed | PrinterMode::NamelessLocals => format!("(λ {})", body),
                 }
             }
-            Expression::Application(application) => {
+            UntypedLambda::Application(application) => {
                 let argument_is_application =
-                    matches!(application.argument, Expression::Application(_));
+                    matches!(application.argument, UntypedLambda::Application(_));
                 let applicator = self.traverse(&application.applicator, current_scope);
                 let argument = self.traverse(&application.argument, current_scope);
                 if argument_is_application {
@@ -120,7 +143,7 @@ mod tests {
     #[test]
     fn test_pretty_print_named() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
         let pretty = ExpressionPrettyPrinter::format_named(&mut expression);
         assert_eq!(pretty, "λx. λy. λz. w x y z");
@@ -129,7 +152,7 @@ mod tests {
     #[test]
     fn test_pretty_print_nameless() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
         let pretty = ExpressionPrettyPrinter::format_nameless_locals(&mut expression);
         assert_eq!(pretty, "λ λ λ w 3 2 1");
@@ -138,7 +161,7 @@ mod tests {
     #[test]
     fn test_pretty_print_indexed() {
         let input = PositionedBuffer::new("(λx.λy.λz. w x y z)");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
         let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
         assert_eq!(pretty, "λ λ λ 4 3 2 1");
@@ -147,7 +170,7 @@ mod tests {
     #[test]
     fn test_associativity() {
         let input = PositionedBuffer::new("λx y z.x z (y z)");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
         let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
         assert_eq!(pretty, "λ λ λ 3 1 (2 1)");
@@ -156,7 +179,7 @@ mod tests {
     #[test]
     fn test_typed_abstraction() {
         let input = PositionedBuffer::new("λx:T,y:U.x y z");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
         let pretty = ExpressionPrettyPrinter::format_named(&mut expression);
         assert_eq!(pretty, "λx:T. λy:U. x y z");

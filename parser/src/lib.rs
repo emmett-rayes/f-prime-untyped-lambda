@@ -10,7 +10,23 @@ pub trait ParserInput
 where
     Self: Sized,
 {
-    fn error(self, message: String) -> ParserError<Self>;
+    fn error(self, message: &str) -> ParserError<Self>;
+}
+
+pub trait DefaultParsable<I>
+where
+    I: ParserInput,
+{
+    fn parse(input: I) -> ParserResult<I, Self>
+    where
+        Self: Sized,
+    {
+        Self::parser().parse(input)
+    }
+
+    fn parser() -> impl Parser<I, Output = Self>
+    where
+        Self: Sized;
 }
 
 pub trait Parser<I>
@@ -19,7 +35,9 @@ where
 {
     type Output;
 
-    fn parse(&self, input: I) -> ParserResult<I, Self::Output>;
+    fn parse<'a>(&self, input: I) -> ParserResult<I, Self::Output>
+    where
+        I: 'a;
 
     fn boxed<'a>(self) -> BoxedParser<'a, I, Self::Output>
     where
@@ -67,7 +85,10 @@ where
 {
     type Output = O;
 
-    fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
+    fn parse<'b>(&self, input: I) -> ParserResult<I, Self::Output>
+    where
+        I: 'b,
+    {
         self.deref().parse(input)
     }
 
@@ -86,7 +107,10 @@ where
 {
     type Output = O;
 
-    fn parse(&self, input: I) -> ParserResult<I, O> {
+    fn parse<'a>(&self, input: I) -> ParserResult<I, O>
+    where
+        I: 'a,
+    {
         self(input)
     }
 }
@@ -118,7 +142,10 @@ where
 {
     type Output = B;
 
-    fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
+    fn parse<'a>(&self, input: I) -> ParserResult<I, Self::Output>
+    where
+        I: 'a,
+    {
         self.parser
             .parse(input)
             .map(|(output, remaining)| ((self.function)(output), remaining))
@@ -168,7 +195,10 @@ where
 {
     type Output = (O1, O2);
 
-    fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
+    fn parse<'a>(&self, input: I) -> ParserResult<I, Self::Output>
+    where
+        I: 'a,
+    {
         self.first_parser
             .parse(input)
             .and_then(|(output1, remaining1)| {
@@ -230,7 +260,10 @@ where
 {
     type Output = O;
 
-    fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
+    fn parse<'a>(&self, input: I) -> ParserResult<I, Self::Output>
+    where
+        I: 'a,
+    {
         let input_clone = input.clone();
         self.first_parser
             .parse(input)
@@ -260,7 +293,10 @@ where
 {
     type Output = Vec<O>;
 
-    fn parse(&self, input: I) -> ParserResult<I, Self::Output> {
+    fn parse<'a>(&self, input: I) -> ParserResult<I, Self::Output>
+    where
+        I: 'a,
+    {
         let mut total_output = Vec::new();
         let mut remaining_input = input;
         while let Ok((output, remaining)) = self.parser.parse(remaining_input.clone()) {
@@ -268,7 +304,7 @@ where
             remaining_input = remaining
         }
         if (total_output.len() as u64) < self.min {
-            Err(remaining_input.error("Unexpected input at this position.".to_string()))
+            Err(remaining_input.error("Unexpected input at this position."))
         } else {
             Ok((total_output, remaining_input))
         }

@@ -1,18 +1,4 @@
-use f_prime_parser::{Parser, ParserError, ParserInput, ParserResult};
-
-pub trait Parsable
-where
-    Self: Sized,
-{
-    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self>;
-
-    fn parser<'a>() -> impl Parser<PositionedBuffer<'a>, Output = Self> + 'a
-    where
-        Self: 'a,
-    {
-        Self::parse
-    }
-}
+use f_prime_parser::{ParserError, ParserInput};
 
 #[derive(Clone, Debug)]
 pub struct PositionedBuffer<'a> {
@@ -48,8 +34,8 @@ impl<'a> PositionedBuffer<'a> {
 }
 
 impl<'a> ParserInput for PositionedBuffer<'a> {
-    fn error(self, message: String) -> ParserError<Self> {
+    fn error(self, message: &str) -> ParserError<Self> {
         let range = self.position..self.position;
-        (message, self, range)
+        (String::from(message), self, range)
     }
 }

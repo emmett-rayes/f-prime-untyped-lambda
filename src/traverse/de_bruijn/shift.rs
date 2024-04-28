@@ -1,31 +1,31 @@
 use crate::expression::abstraction::{Abstraction, TypedAbstraction};
 use crate::expression::variable::DeBruijnIndex;
-use crate::expression::Expression;
+use crate::expression::UntypedLambda;
 
 pub struct DeBruijnShift {
     place: i64,
 }
 
 impl DeBruijnShift {
-    pub fn shift(place: i64, expression: &mut Expression) {
+    pub fn shift(place: i64, expression: &mut UntypedLambda) {
         let mut shifter = Self { place };
         shifter.traverse(1, expression)
     }
 
-    fn traverse(&mut self, cutoff: DeBruijnIndex, expression: &mut Expression) {
+    fn traverse(&mut self, cutoff: DeBruijnIndex, expression: &mut UntypedLambda) {
         match expression {
-            Expression::Variable(variable) => {
+            UntypedLambda::Variable(variable) => {
                 if variable.index >= cutoff {
                     variable.index = variable.index.saturating_add_signed(self.place);
                 }
             }
-            Expression::Abstraction(box Abstraction { parameter: _, body })
-            | Expression::TypedAbstraction(box TypedAbstraction {
+            UntypedLambda::Abstraction(box Abstraction { parameter: _, body })
+            | UntypedLambda::TypedAbstraction(box TypedAbstraction {
                 parameter: _, body, ..
             }) => {
                 self.traverse(cutoff + 1, body);
             }
-            Expression::Application(application) => {
+            UntypedLambda::Application(application) => {
                 self.traverse(cutoff, &mut application.applicator);
                 self.traverse(cutoff, &mut application.argument);
             }
@@ -44,7 +44,7 @@ mod tests {
     #[test]
     fn test_shift() {
         let input = PositionedBuffer::new("(λx.λy. x (y w))");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
         DeBruijnShift::shift(2, &mut expression);
         let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);
@@ -54,7 +54,7 @@ mod tests {
     #[test]
     fn test_shift_nested() {
         let input = PositionedBuffer::new("(λx. x w (λy. y x w))");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
         DeBruijnShift::shift(2, &mut expression);
         let pretty = ExpressionPrettyPrinter::format_indexed(&mut expression);

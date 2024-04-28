@@ -1,11 +1,11 @@
 use std::marker::PhantomData;
 
 use f_prime_parser::combinators::one_of;
-use f_prime_parser::{Parser, ParserResult};
+use f_prime_parser::{DefaultParsable, Parser, ParserResult};
 
-use crate::expression::buffer::Parsable;
 use crate::expression::buffer::PositionedBuffer;
-use crate::expression::symbol::{literal_parser, Symbol};
+use crate::expression::literal::LiteralParser;
+use crate::expression::symbol::Symbol;
 
 #[derive(Debug)]
 pub struct Constant<T> {
@@ -22,24 +22,56 @@ impl<T> From<Symbol> for Constant<T> {
     }
 }
 
-pub trait DefinedConstants {
+pub struct ConstantParser<C> {
+    phantom: PhantomData<C>,
+}
+
+impl<C> Default for ConstantParser<C> {
+    fn default() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+}
+
+pub trait DefinedC {
     const CHOICES: &'static [&'static str];
 }
 
-impl<CONSTANTS> Parsable for Constant<CONSTANTS>
+impl<'a, C> Parser<PositionedBuffer<'a>> for ConstantParser<C>
 where
-    CONSTANTS: DefinedConstants,
+    C: DefinedC,
 {
-    fn parse(input: PositionedBuffer) -> ParserResult<PositionedBuffer, Self> {
+    type Output = Constant<C>;
+
+    fn parse<'b>(
+        &self,
+        input: PositionedBuffer<'a>,
+    ) -> ParserResult<PositionedBuffer<'a>, Self::Output>
+    where
+        PositionedBuffer<'a>: 'b,
+    {
         let parser = one_of(
-            CONSTANTS::CHOICES
+            C::CHOICES
                 .iter()
-                .map(|constant| literal_parser(constant).boxed())
+                .map(|constant| LiteralParser::new(constant).boxed())
                 .collect(),
         )
         .map(Constant::from);
 
         parser.parse(input)
+    }
+}
+
+impl<'a, C> DefaultParsable<PositionedBuffer<'a>> for Constant<C>
+where
+    C: DefinedC,
+{
+    fn parser() -> impl Parser<PositionedBuffer<'a>, Output = Self>
+    where
+        Self: Sized,
+    {
+        ConstantParser::default()
     }
 }
 
@@ -52,25 +84,25 @@ mod tests {
     #[test]
     fn test_constant() {
         #[derive(Debug)]
-        struct TestConstants;
+        struct TestC;
 
-        impl DefinedConstants for TestConstants {
+        impl DefinedC for TestC {
             const CHOICES: &'static [&'static str] = &["fix", "top"];
         }
 
         let input = PositionedBuffer::new("fix");
         assert_matches!(
-            Constant::<TestConstants>::parse(input),
+            Constant::<TestC>::parse(input),
             Ok((constant, _)) if constant.symbol == "fix",
         );
 
         let input = PositionedBuffer::new("top");
         assert_matches!(
-            Constant::<TestConstants>::parse(input),
+            Constant::<TestC>::parse(input),
             Ok((constant, _)) if constant.symbol == "top",
         );
 
         let input = PositionedBuffer::new("else");
-        assert_matches!(Constant::<TestConstants>::parse(input), Err(_),);
+        assert_matches!(Constant::<TestC>::parse(input), Err(_),);
     }
 }

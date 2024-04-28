@@ -1,27 +1,31 @@
 use crate::expression::abstraction::{Abstraction, TypedAbstraction};
 use crate::expression::variable::DeBruijnIndex;
-use crate::expression::Expression;
+use crate::expression::UntypedLambda;
 use crate::traverse::de_bruijn::shift::DeBruijnShift;
 
 pub struct DeBruijnSubstitution {
-    replacement: Expression,
+    replacement: UntypedLambda,
 }
 
 impl DeBruijnSubstitution {
-    pub fn substitute(target: DeBruijnIndex, replacement: Expression, expression: &mut Expression) {
+    pub fn substitute(
+        target: DeBruijnIndex,
+        replacement: UntypedLambda,
+        expression: &mut UntypedLambda,
+    ) {
         let mut substitution = DeBruijnSubstitution { replacement };
         substitution.traverse(target, expression);
     }
 
-    fn traverse(&mut self, target: DeBruijnIndex, expression: &mut Expression) {
+    fn traverse(&mut self, target: DeBruijnIndex, expression: &mut UntypedLambda) {
         match expression {
-            Expression::Variable(variable) => {
+            UntypedLambda::Variable(variable) => {
                 if variable.index == target {
                     *expression = self.replacement.clone()
                 }
             }
-            Expression::Abstraction(box Abstraction { parameter: _, body })
-            | Expression::TypedAbstraction(box TypedAbstraction {
+            UntypedLambda::Abstraction(box Abstraction { parameter: _, body })
+            | UntypedLambda::TypedAbstraction(box TypedAbstraction {
                 parameter: _, body, ..
             }) => {
                 let replacement = self.replacement.clone();
@@ -29,7 +33,7 @@ impl DeBruijnSubstitution {
                 self.traverse(target + 1, body);
                 self.replacement = replacement;
             }
-            Expression::Application(application) => {
+            UntypedLambda::Application(application) => {
                 self.traverse(target, &mut application.applicator);
                 self.traverse(target, &mut application.argument);
             }
@@ -49,10 +53,10 @@ mod tests {
     #[test]
     fn test_substitute() {
         let input = PositionedBuffer::new("(b (λx.λy.b))");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
 
-        let replacement = Expression::from(Variable::from(String::from("a")));
+        let replacement = UntypedLambda::from(Variable::from(String::from("a")));
         DeBruijnSubstitution::substitute(1, replacement, &mut expression);
         let pretty = ExpressionPrettyPrinter::format_named(&mut expression);
         assert_eq!(pretty, "a (λx. λy. a)");
@@ -61,11 +65,11 @@ mod tests {
     #[test]
     fn test_substitute_2() {
         let input = PositionedBuffer::new("b (λx.b)");
-        let (mut expression, _) = Expression::parse(input).unwrap();
+        let (mut expression, _) = UntypedLambda::parse(input).unwrap();
         DeBruijnConverter::convert(&mut expression);
 
         let replacement_input = PositionedBuffer::new("a (λz.a)");
-        let (mut replacement, _) = Expression::parse(replacement_input).unwrap();
+        let (mut replacement, _) = UntypedLambda::parse(replacement_input).unwrap();
         DeBruijnConverter::convert(&mut replacement);
 
         DeBruijnSubstitution::substitute(1, replacement, &mut expression);
